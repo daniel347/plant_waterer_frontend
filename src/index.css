@@ -11,3 +11,39 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+h2 {
+  font-size: 2rem;
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+  color: var(--primary-colour);
+  margin: 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-family: "Quicksand", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--primary-colour);
+  margin: 0.5rem;
+}
+
+.button {
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  margin: 1rem;
+  background-color: var(--primary-colour);
+
+  font-family: "Quicksand", sans-serif;
+  font-size: 1rem;
+  color: white;
+
+}
+
+.button:hover {
+  background-color: var(--primary-light-colour);
+}
