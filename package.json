@@ -25,7 +25,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -48,9 +50,11 @@
   "devDependencies": {
     "babel-preset-react-app": "^10.1.0",
     "customize-cra": "^1.0.0",
+    "gh-pages": "^6.3.0",
     "react-app-rewired": "^2.2.1",
     "react-svg-loader": "^3.0.3",
     "svg-url-loader": "^8.0.0",
     "webpack-cli": "^6.0.1"
-  }
+  },
+  "homepage": "http://daniel-347.github.io/plant_waterer_frontend"
 }
