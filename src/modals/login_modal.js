@@ -51,7 +51,7 @@ export function LoginModal({setAuthenticated, setUser}) {
                     <h4 className={loginFailed ? "modal_subtitle error" : "modal_subtitle"}>{instruction}</h4>
                     <div style={{"height": "2rem", "width": "100%"}}/>
                     <TextInput id="email" label="Email" text={email} setText={setEmail}/>
-                    <TextInput id="password" label="Password" text={password} setText={setPassword}/>
+                    <TextInput id="password" label="Password" text={password} setText={setPassword} secureTextEntry={true}/>
                     <div/>
 
                     <button type="submit" className="button">Login</button>

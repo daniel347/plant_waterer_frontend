@@ -34,6 +34,7 @@ h3 {
 
 .button {
   border-radius: 1rem;
+  border: none;
   padding: 0.5rem 1rem;
   margin: 1rem;
   background-color: var(--primary-colour);
@@ -41,7 +42,7 @@ h3 {
   font-family: "Quicksand", sans-serif;
   font-size: 1rem;
   color: white;
-
+  transition: 0.3s;
 }
 
 .button:hover {

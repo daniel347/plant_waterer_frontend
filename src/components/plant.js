@@ -8,10 +8,12 @@ import WaterIcon from "../assets/WaterIcon";
 import {PlantEditModal} from "../modals/plant_edit_modal";
 import {ConfirmModal} from "../modals/confirm_modal";
 import ClickAndHoldWrapper from "react-click-and-hold/core";
+import {DisableSwitch} from "./disable_plant_switch";
 
 export function Plant({plant_name, data, update, remove, db_ref}){
     const [modalVisible, setModalVisible] = React.useState(false);
     const [closeConfirmVisible, setCloseConfirmVisible] = React.useState(false);
+    const [disabled, setDisabled] = React.useState(data.disabled);
 
     const handleClick = (e) => {
         if (e.nativeEvent.button === 0) {
@@ -36,6 +38,11 @@ export function Plant({plant_name, data, update, remove, db_ref}){
         remove()
     }
 
+    const updateDisabled = (disabled) => {
+        setDisabled(disabled);
+        update({disabled: disabled});
+    }
+
     const plant_display_name = plant_name.replace(/_/g, ' ');
 
     return (
@@ -44,6 +51,7 @@ export function Plant({plant_name, data, update, remove, db_ref}){
             {closeConfirmVisible && <ConfirmModal message={"This will permenantly delete this plant and associated data."}
                 confirm={confirmDelete}
                 close={() => setCloseConfirmVisible(false)}/>}
+            <DisableSwitch disabled={disabled} setDisabled={updateDisabled}/>
             <ClickAndHoldWrapper
                 id={1}
                 elmType={"div"}
@@ -52,6 +60,7 @@ export function Plant({plant_name, data, update, remove, db_ref}){
                 timeOut={300}
             >
                 <div className="plant_container">
+                    {disabled && <div className="disabled_overlay"/>}
                     <h2 className="plant_title">{plant_display_name}</h2>
                     <h4 className="scientific_name">{data.scientific_name}</h4>
 

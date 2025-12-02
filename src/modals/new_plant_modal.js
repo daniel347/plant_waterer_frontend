@@ -31,6 +31,7 @@ export function NewPlantModal({add, close}) {
         // add slider data
         data.mode = "interval";
         data.mode_params = {interval: {water_frequency: freq, water_volume: vol}};
+        data.disabled = false;
 
         add(name, data);
         close();
@@ -57,11 +58,11 @@ export function NewPlantModal({add, close}) {
 
                     <h3>Water frequency</h3>
                     <h2>{freq} hours</h2>
-                    <Slider min={1} max={72} defaultValue={freq} onChange={(val) => setFreq(val)}/>
+                    <Slider min={0} max={168} step={4} defaultValue={freq} onChange={(val) => setFreq(val)}/>
 
                     <h3>Water volume</h3>
                     <h2>{vol} ml</h2>
-                    <Slider min={0} max={300} defaultValue={vol} onChange={(val) => setVol(val)}/>
+                    <Slider min={0} max={500} step={10} defaultValue={vol} onChange={(val) => setVol(val)}/>
 
                     <button type="submit" className="button">Done</button>
                     <button type="button" className="button" onClick={close}>Cancel</button>

@@ -22,15 +22,16 @@
 }
 
 .modal_title {
-  font-size: 2rem;
-  font-family: "Inter", sans-serif;
+  font-size: 3rem;
+  font-family: "volterra", sans-serif;
+  letter-spacing: 0.5rem;
   color: var(--primary-colour);
-  margin: 0.25rem;
+  margin: 1rem;
 }
 
 .modal_subtitle {
-  font-size: 1rem;
-  font-family: "Inter", sans-serif;
+  font-size: 1.25rem;
+  font-family: "Poiret One", sans-serif;
   color: var(--primary-light-colour);
   margin: 0.25rem;
 }

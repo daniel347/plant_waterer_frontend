@@ -14,6 +14,7 @@ export function Garden() {
     const [dataLoaded, setDataLoaded] = React.useState(false);
     const [authenticated, setAuthenticated] = React.useState(false);
     const [user, setUser] = React.useState(null);
+    const [ping, setPing] = React.useState(0);
 
     const firebaseConfig = {
       apiKey: "AIzaSyBMkmcudKEwkXGguzcNwZCY7md0rGaHf7I",
@@ -37,6 +38,14 @@ export function Garden() {
                     console.log("No data available");
                 }
             }).catch((error) => {console.error(error); setDataLoaded(false)});
+            get(child(dbRef, "system/online")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log("System online status:", snapshot.val());
+                    setPing(snapshot.val());
+                } else {
+                    console.log("No online status data available");
+                }
+            }).catch((error) => {console.error(error)});
         }
     }, [dataLoaded, authenticated]);
 
@@ -59,10 +68,26 @@ export function Garden() {
         setPlants(plants_clone);
     }
 
+    useEffect(() => {
+      const interval = setInterval(() => {
+        console.log("Pinging system online status");
+        get(child(dbRef, "system/online")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log("System online status:", snapshot.val());
+                    setPing(snapshot.val());
+                } else {
+                    console.log("No online status data available");
+                }
+            }).catch((error) => {console.error(error)});
+        return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
+      }, 60000);
+    }, []);
+
     return (
         <main>
             {!authenticated && <LoginModal setAuthenticated={setAuthenticated} setUser={setUser}/>}
             <h1 className="garden_title">My Garden</h1>
+            {(Date.now() - ping > 3600000) && <h2 className="offline">System is offline</h2>}
             <div className="garden_container">
                 {Object.entries(plants).map((plant) =>
                     <Plant

@@ -30,11 +30,11 @@ export function PlantEditModal({plant_name, data, update, close, db_ref}) {
 
                 <h3>Water frequency</h3>
                 <h2>{freq} hours</h2>
-                <Slider min={1} max={72} defaultValue={freq} onChange={(val) => setFreq(val)}/>
+                <Slider min={0} max={168} step={4} defaultValue={freq} onChange={(val) => setFreq(val)}/>
 
                 <h3>Water volume</h3>
                 <h2>{vol} ml</h2>
-                <Slider min={0} max={300} defaultValue={vol} onChange={(val) => setVol(val)}/>
+                <Slider min={0} max={500} step={10} defaultValue={vol} onChange={(val) => setVol(val)}/>
 
                 <button className="button" onClick={finish}>Done</button>
                 <button className="button" onClick={close}>Cancel</button>
