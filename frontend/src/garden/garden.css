@@ -1,0 +1,24 @@
+.garden_container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1rem;
+    max-width: 80rem;
+    margin: 1rem auto;
+    flex-wrap: wrap;
+}
+
+.garden_title {
+  font-size: 4rem;
+  font-family: "volterra", serif;
+  letter-spacing: 0.5rem;
+  color: var(--primary-light-colour);
+  margin: 0.55rem;
+}
+
+.offline {
+    font-family: "Poiret One", sans-serif;
+    color: var(--error-colour);
+    font-size: 1.5rem;
+}
