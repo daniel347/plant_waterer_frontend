@@ -22,7 +22,7 @@ export function PlantEditModal({plant_name, data, update, close, db_ref}) {
     return (
         <div>
             <div className="modal_background" onClick={close}/>
-            <div className="modal plant_container">
+            <div className="modal edit_plant_modal_size plant_container">
                 <h2 className="plant_title">{plant_display_name}</h2>
                 <h4 className="scientific_name">{data.scientific_name}</h4>
 

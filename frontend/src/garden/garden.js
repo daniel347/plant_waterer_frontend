@@ -87,7 +87,7 @@ export function Garden() {
         <main>
             {!authenticated && <LoginModal setAuthenticated={setAuthenticated} setUser={setUser}/>}
             <h1 className="garden_title">My Garden</h1>
-            {(Date.now() - ping > 3600000) && <h2 className="offline">System is offline</h2>}
+            {(Date.now()/1000 - ping > 3600) && <h2 className="offline">System is offline</h2>}
             <div className="garden_container">
                 {Object.entries(plants).map((plant) =>
                     <Plant

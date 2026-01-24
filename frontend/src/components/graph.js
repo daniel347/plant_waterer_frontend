@@ -51,6 +51,6 @@ export function Graph({db_ref, plant_name}) {
                     <Scatter name={y_name} data={data} fill={style.getPropertyValue('--primary-colour')} line shape="circle" />
                 </ScatterChart>
             </ResponsiveContainer>
-        </div>
+        </div> && (data.length > 0)
     );
 }

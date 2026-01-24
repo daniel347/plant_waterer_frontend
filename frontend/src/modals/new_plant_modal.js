@@ -48,7 +48,7 @@ export function NewPlantModal({add, close}) {
     return (
         <div>
             <div className="modal_background" onClick={close}/>
-            <div className="modal plant_container">
+            <div className="modal add_plant_modal_size plant_container">
                 <form method="post" onSubmit={handleSubmit}>
                     <TextInput id="plant_name" label="Plant name" text={plantName} setText={setPlantName}/>
                     <TextInput id="scientific_name" label="Scientific name" text={scientificName} setText={setScientificName}/>

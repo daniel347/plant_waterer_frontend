@@ -14,7 +14,7 @@ class ServoValve {
     int valveEnPin;
     Servo valveServo;
     int servoMoveDelay = 500;  //ms
-    int servoOpenAngle = 90;
+    int servoOpenAngle = 180;
     int servoClosedAngle = 0;
 };
 
