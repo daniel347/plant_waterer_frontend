@@ -30,6 +30,7 @@ void loop() {}
 #include "servo_valve.hpp"
 #include "plant.hpp"
 #include "Database.hpp"
+#include "MoistureSensor.hpp"
 
 // ================== WiFi and Time Settings ==================
 const char* ssid     = "PLUSNET-NZCF7H";
@@ -64,6 +65,7 @@ bool set_listeners = false;
 // ================== Hardware Objects ==================
 Pump pump(PUMP_PIN, PUMP_FLOW_RATE_ML_PER_MIN);
 ServoValve* valves[MAX_N_PLANTS];
+MoistureSensor* sensors[MAX_N_PLANTS];
 
 // ================== Plants ==================
 // Plant plant1("Chilli", &valve1, 200.0, 24); // 50ml every 24 hours
@@ -80,6 +82,10 @@ unsigned long last_pinged = 0;
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
+#endif
+
+#ifdef TEST_MOISTURE_SENSOR
+MoistureSensor s(35);
 #endif
 
 #ifndef FIREBASE
@@ -119,6 +125,9 @@ void setup() {
 #ifdef CYCLE_VALVE
     v.begin();
 #endif
+#ifdef TEST_MOISTURE_SENSOR
+    s.begin();
+#endif
 
     for (int j = 0; j < n_plants; j++) {
         valves[j]->open();
@@ -132,8 +141,9 @@ void setup() {
 void loop() {
 #ifdef CYCLE_VALVE
   cycleValve(&v);
+#elifdef TEST_MOISTURE_SENSOR
+  testMoistureSensor(&s);
 #else
-
 
 #ifdef FIREBASE
   // Serial.print("heap size: ");
@@ -251,8 +261,17 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
     valves[n_plants] = new ServoValve(int(plant_data["valve_pin"]), VALVE_EN_PIN);
     valves[n_plants]->begin();
     valves[n_plants]->open();
+
+    if (plant_data["sensor_pin"].is<int>() && plant_data["sensor_under_plate"].is<bool>()) {
+        sensors[n_plants] = new MoistureSensor(plant_data["sensor_pin"], plant_data["sensor_under_plate"]);
+    }
+    else {
+        sensors[n_plants] = NULL;
+    }
+
     plants[n_plants] = new Plant(plant_name,
                                  valves[n_plants],
+                                 sensors[n_plants],
                                  float(plant_data["mode_params"]["interval"]["water_volume"]),
                                  (unsigned int) plant_data["mode_params"]["interval"]["water_frequency"],
                                  time_t(plant_data["last_watered"]),
@@ -296,6 +315,7 @@ void updatePlant(const char* new_data, const char* path) {
                                     plants[i]->updateSettings(float(interval["water_volume"]), (unsigned int) interval["water_frequency"]);
                                 }
                             }
+                            
                         }
 
                         // update disabled
@@ -340,6 +360,12 @@ void cycleValve(ServoValve *v) {
     v->close();
     Serial.println("closed");
     delay(3000);
+}
+
+void testMoistureSensor(MoistureSensor *s) {
+    Serial.print("Moisture reading: ");
+    Serial.println(s->read_water_saturation());
+    delay(1000);
 }
 
 #endif //COMPILE_FIREBASE

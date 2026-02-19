@@ -1,0 +1,32 @@
+#include "MoistureSensor.hpp"
+#include <Arduino.h>
+
+MoistureSensor::MoistureSensor(int p, bool plateSensor) : pin(p), isPlateSensor(plateSensor) {}
+
+void MoistureSensor::begin() {
+    pinMode(pin, INPUT);
+}
+
+float MoistureSensor::read_adc_avg() {
+    int adc_read = 0
+    for (int i=0; i < num_readings; i++) {
+        int adc_read += analogRead(pin);
+        delay(reading_delay);
+    }
+    return float(adc_read / num_readings);
+}
+
+float MoistureSensor::read_water_saturation() {
+    float read_avg = read_adc_avg();
+    return float(read_avg - dry_reading) / float(saturated_reading);
+}
+
+void MoistureSensor::set_dry_plate_reading() {
+    plate_dry_reading = read_adc_avg();
+}
+
+bool MoistureSensor::plate_is_wet() {
+    float read_avg = read_adc_avg();
+    return (plate_dry_reading - read_avg) > plate_wet_thresh;
+}
+

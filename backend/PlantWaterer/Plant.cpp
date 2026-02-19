@@ -4,16 +4,34 @@
 #include "servo_valve.hpp"
 #include "pump.hpp"
 #include <ctime>
+#include "util.cpp"
 
 
-Plant::Plant(const char* name, ServoValve* valve, float waterVolumeML, unsigned int intervalHours, time_t lastWateredT=0, bool isDisabled=false)
-: plantName(name), valvePtr(valve), volumeML(waterVolumeML),
-  intervalMillis(intervalHours * 3600000UL), lastWatered(lastWateredT),
+Plant::Plant(const char* name, ServoValve* valve, MoistureSensor* sensor, WaterSettings _settings, time_t lastWateredT=0, bool isDisabled=false)
+: plantName(name), valvePtr(valve), sensorPtr(sensor), settings(_settings), lastWatered(lastWateredT),
    disabled(isDisabled) {}
 
 void Plant::water(Pump& pump) {
     valvePtr->open();
-    pump.pumpVolume(volumeML);
+    if (quantityMode == QuantitySignal::Volume) {
+        pump.pumpVolume(settings.volumeML);
+    }
+    else if (quantityMode == QuantitySignal::Moisture) {
+        pump.startPump();
+        while (sensorPtr->read_water_saturation() < settings.stopMoistureThresh &&
+                     pump.pumpedSoFar() <settings.maxVolumeML) {
+            delay(2000);
+        };
+        pump.stopPump();
+    }
+    else if (quantityMode == QuantitySignal::PlateWet) {
+        pump.startPump();
+        while (!sensorPtr->plate_is_wet() &&
+                 pump.pumpedSoFar() < settings.maxVolumeML) {
+            delay(2000);
+        };
+        pump.stopPump();
+    }
     valvePtr->close();
     lastWatered = getEpochTime();
 }
@@ -23,30 +41,28 @@ bool Plant::needsWater() {
         return false;
     }
     time_t now = getEpochTime();
-    Serial.print("time: ");
-    Serial.println(now);
-    Serial.print("last watered: ");
-    Serial.println(lastWatered);
-    Serial.print("interval: ");
-    Serial.println(intervalMillis / 1000);
-    return (now - lastWatered) >= (intervalMillis / 1000);
+    if ((now - lastWatered) >= (settings.maxIntervalMillis / 1000)) {
+        Serial.println("Watering as beyond max interval");
+        return true;
+    }
+    else if ((now - lastWatered) <= (settings.minIntervalMillis / 1000)) {
+        Serial.println("Not watering as before min interval");
+        return false;
+    }
+    
+    if (settings.startMode == StartSignal::Interval) {
+        return (now - lastWatered) >= (settings.intervalMillis / 1000);
+    }
+    else if (settings.startMode == StartSignal::Moisture) {
+        return (sensorPtr->read_water_saturation() < settings.startMoistureThresh);
+    }
+    else if (settings.startMode == StartSignal::PlateDry) {
+        return !sensorPtr->plate_is_wet();
+    }
 }
 
 const char* Plant::getName() { return plantName; }
 
-void Plant::updateSettings(float waterVolumeML, unsigned int intervalHours) {
-    volumeML = waterVolumeML;
-    intervalMillis = ((unsigned long) intervalHours) * 3600000UL;
-
-    Serial.println("Updating plant with settings");
-    Serial.print("volume: ");
-    Serial.println(volumeML);
-    Serial.print("interval: ");
-    Serial.println(intervalMillis);
-}
-
-time_t Plant::getEpochTime() {
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) return 0;
-    return mktime(&timeinfo);
+void Plant::updateSettings(WaterSettings _settings) {
+    settings = _settings;
 }

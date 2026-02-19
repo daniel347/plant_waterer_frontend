@@ -1,4 +1,5 @@
 #include "pump.hpp"
+#include "util.cpp"
 #include <Arduino.h>
 
 Pump::Pump(int pin, float flowRateMLPerMin)
@@ -14,3 +15,17 @@ void Pump::pumpVolume(float volumeML) {
     digitalWrite(pumpPin, LOW);
 }
 
+void Pump::startPump() {
+    pumpOnTime = getEpochTime();
+    digitalWrite(pumpPin, HIGH);
+}
+
+void Pump::stopPump() {
+    digitalWrite(pumpPin, LOW);
+}
+
+float Pump::pumpedSoFar() {
+    now = getEpochTime();
+    unsigned long pumpTimeS = (now - pumpOnTime);
+    return float(pumpTimeS) * flowRate / 60.0;
+}

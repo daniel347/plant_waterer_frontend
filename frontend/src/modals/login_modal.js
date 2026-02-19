@@ -47,6 +47,9 @@ export function LoginModal({setAuthenticated, setUser}) {
             <div className="modal_background"/>
             <div className="modal plant_container login_modal_size">
                 <form method="post" onSubmit={handleSubmit}>
+                    <div  style={{margin: "1rem"}}>
+                        <img src="/login_graphic.png" width="150mm" height="150mm"/>
+                    </div>
                     <h2 className="modal_title">Welcome!</h2>
                     <h4 className={loginFailed ? "modal_subtitle error" : "modal_subtitle"}>{instruction}</h4>
                     <div style={{"height": "2rem", "width": "100%"}}/>
