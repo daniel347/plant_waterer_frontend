@@ -6,6 +6,7 @@ import './modal.css';
 import '../index.css'
 import {Graph} from "../components/graph";
 import {TextInput} from "../components/text_input";
+import { Selector } from "../components/selector";
 
 
 export function NewPlantModal({add, close}) {
@@ -55,6 +56,18 @@ export function NewPlantModal({add, close}) {
                     <TextInput id="image_file" label="Image file" text={imgPath} setText={setImgPath}/>
 
                     <TextInput id="valve_pin" label="Pin" text={valvePin} setText={setValvePinNumber}/>
+
+                    <Selector id="moisture_sensor" label="Moisture sensor">
+                        <option value="None">Some option</option>
+                        <option value="S">Some option</option>
+                        <option value="Every">Other option</option>
+                    </Selector>
+
+                    <Selector id="start_signal" label="Start watering">
+                        <option value="moisture">When moisture is below"</option>
+                        <option value="plate_dry">When the plate is dry</option>
+                        <option value="inverval">Every</option>
+                    </Selector>
 
                     <h3>Water frequency</h3>
                     <h2>{freq} hours</h2>
