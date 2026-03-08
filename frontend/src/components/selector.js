@@ -1,6 +1,7 @@
 import React from "react";
 import Select, {StylesConfig} from 'react-select';
 import "./selector.css"
+import "./component.css"
 
 export function Selector({label, options, id, onChange, selected}) {
     const selectStyles: StylesConfig<StateOption, false> = {
@@ -14,7 +15,7 @@ export function Selector({label, options, id, onChange, selected}) {
     }),};
 
     return (
-        <div className="selector">
+        <div className="input_container">
             <label htmlFor={id} className={"label"}>
                 {label}
             </label>

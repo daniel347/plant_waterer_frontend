@@ -1,55 +1,83 @@
 import React from "react"
+import { Selector } from "../components/selector";
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
+import '../components/plant.css';
+import { Navbar } from "../components/navbar";
+import LabelledSlider from "../components/labelled_slider";
 
-export default function PlantSettingsSubpage({current_settings}) {
-    const [settings, setSettings] = React.useState(current_settings);
+export default function PlantSettingsSubpage({settings, setSettings, hasMoistureSensor, sensorUnderPlate}) {
     const [page, setPage] = React.useState("Settings");
 
-    function update_settings(name, value) {
-        setSettings({...settings, })
-    }
+    const start_mode_opts = [{value: "Interval", label: "at regular intervals"},].concat(hasMoistureSensor ? (sensorUnderPlate ? [{value: "PlateDry", label: "when the plate is dry"},] : [{ value: "Moisture", label: "soil moisture"},]) : []);
+    const quantity_mode_opts = [{ value: "Volume", label: "volume"},].concat(hasMoistureSensor ? (sensorUnderPlate ? [{value: "PlateWet", label: "when the plate is wet"},] : [{value: "Moisture", label: "soil moisture"},]) : []);
 
     return (
         <>
-            <Navbar headings={["Settings", "Modes"]} open_page={page} set_open_page={setPage}/>
+            <Navbar headings={["Settings", "Modes", "Limits"]} open_page={page} set_open_page={setPage}/>
             {(page == "Settings") && <>
-                {(settings.start_signal == "Moisture") && <>
-                    <h2>{startMoisture} %</h2>
-                    <Slider min={0} max={100} step={1} defaultValue={settings.start_moisture_thresh}
-                            onChange={(v) => setSettings({...settings, start_moisture_thresh: v})}/></> } 
+                {(settings.start_signal == "Moisture") && 
+                <LabelledSlider id="start_moisture_thresh"
+                                label="Water when soil moisture falls below"
+                                val={settings.start_moisture_thresh}
+                                setVal={(v) => setSettings({...settings, start_moisture_thresh: v})}
+                                min={0} max={100} step={1} unit={"%"}/>} 
 
-                {(settings.start_signal == "Interval") && <>
-                    <h2>{freq} hours</h2>
-                    <Slider min={0} max={168} step={4} defaultValue={settings.interval}
-                            onChange={(v) => setSettings({...settings, interval: v})}/></>} 
+                {(settings.start_signal == "Interval") &&
+                 <LabelledSlider id="interval"
+                                label="Water frequency"
+                                val={settings.interval}
+                                setVal={(v) => setSettings({...settings, interval: v})}
+                                min={settings.min_interval} max={settings.max_interval} step={4} unit={"hours"}/>} 
 
-                {(settings.quantity_signal == "Volume") && <>
-                    <h2>{vol} ml</h2>
-                    <Slider min={0} max={500} step={10} defaultValue={settings.volume_ml}
-                            onChange={(v) => setSettings({...settings, volume_ml: v})}/></>}
+                {(settings.quantity_signal == "Volume") && 
+                 <LabelledSlider id="volume_ml"
+                                label="Water volume"
+                                val={settings.volume_ml}
+                                setVal={(v) => setSettings({...settings, volume_ml: v})}
+                                min={0} max={settings.max_volume_ml} step={10} unit={"ml"}/>}
 
-                {(settings.quantity_signal == "Moisture") && <>
-                    <h2>{quantityMoisture} %</h2>
-                    <Slider min={0} max={100} step={1} defaultValue={settings.stop_moisture_thresh}
-                            onChange={(v) => setSettings({...settings, stop_moisture_thresh: v})}/></>}
+                {(settings.quantity_signal == "Moisture") && 
+                 <LabelledSlider id="stop_moisture_thresh"
+                                label="Stop watering when soil moisture reaches"
+                                val={settings.stop_moisture_thresh}
+                                setVal={(v) => setSettings({...settings, stop_moisture_thresh: v})}
+                                min={0} max={100} step={1} unit={"%"}/>}
 
             </>}
 
             {(page == "Modes") && <>
                 <Selector id="start_signal" 
                             label="Start watering"
-                            options={[{ value: "Moisture", label: "soil moisture"},
-                                    {value: "PlateDry", label: "when the plate is dry"},
-                                    {value: "Interval", label: "at regular intervals"}]}
+                            options={start_mode_opts}
                             onChange={(val) => setSettings({...settings, start_signal: val.value})}
                             selected={settings.start_signal}/>
 
                 <Selector id="quantity_signal" 
                             label="Stop after"
-                            options={[{ value: "Volume", label: "volume"},
-                                {value: "Moisture", label: "soil moisture"},
-                                {value: "PlateWet", label: "when the plate is wet"}]}
+                            options={quantity_mode_opts}
                             onChange={(val) => setSettings({...settings, quantity_signal: val.value})}
                             selected={settings.quantity_signal}/>
+            </>}
+
+            {(page == "Limits") && <>
+                <LabelledSlider id="min_interval"
+                                label="Don't water more frequently than every"
+                                val={settings.min_interval}
+                                setVal={(v) => setSettings({...settings, min_interval: v})}
+                                min={0} max={96} step={1} unit={"hours"}/>
+
+                <LabelledSlider id="max_interval"
+                                label="Water if not watered for over"
+                                val={settings.max_interval}
+                                setVal={(v) => setSettings({...settings, max_interval: v})}
+                                min={0} max={14*24} step={1} unit={"hours"}/>
+
+                <LabelledSlider id="min_interval"
+                                label="Don't water more than "
+                                val={settings.max_volume_ml}
+                                setVal={(v) => setSettings({...settings, max_volume_ml: v})}
+                                min={0} max={1000} step={10} unit={"ml"}/>
             </>}
         </>);
 }

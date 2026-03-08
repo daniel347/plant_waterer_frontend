@@ -7,28 +7,28 @@
   border-radius: 1.25rem;
   border-color: hsl(0, 0%, 70%);
   border-width: 1px;
+  width: 100%;
 }
 
 .inner_label {
   font-family: "Quicksand", sans-serif;
   color: var(--primary-light-colour);
 
-  position: absolute;
+  position: relative;
   width: 100%;
   height: 100%;
-  top: 0.75rem;
+  top: 1.875rem;
   text-align: center;
   transition: all 0.2s ease-in-out;
 }
 
 .inner_label_up {
-  top: -1.25rem;
+  top: 0rem;
   color: var(--primary-colour);
   transition: all 0.2s ease-in-out;
 }
 
 .label_container {
-  position: relative;
   display: inline-block;
-  margin: 0.5rem;
+  width: 100%;
 }

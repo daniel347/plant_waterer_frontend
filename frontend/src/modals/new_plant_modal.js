@@ -8,6 +8,7 @@ import {Graph} from "../components/graph";
 import {TextInput} from "../components/text_input";
 import { Selector } from "../components/selector";
 import { Checkbox, useCheckboxState } from 'pretty-checkbox-react';
+import PlantSettingsSubpage from "../components/plant_settings_subpage";
 
 
 export function NewPlantModal({add, close, available_pins, available_sensor_pins}) {
@@ -20,13 +21,15 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
     const [sensorPin, setSensorPin] = React.useState(-1);
     const sensorUnderPlate = useCheckboxState();
 
-    const [startSignal, setStartSignal] = React.useState("");
-    const [freq, setFreq] = React.useState(24);
-    const [startMoisture, setStartMoisture] = React.useState(40);
-
-    const [quantitySignal, setQuantitySignal] = React.useState("");
-    const [vol, setVol] = React.useState(0);
-    const [quantityMoisture, setQuantityMoisture] = React.useState(60);
+    const [settings, setSettings] = React.useState({interval: 24,
+                                                    start_moisture_thresh: 30,
+                                                    max_interval: 14 * 24,
+                                                    min_interval: 12,
+                                                    volume_ml: 100,
+                                                    stop_moisture_thresh: 60,
+                                                    max_volume_ml: 300,
+                                                    start_signal: "Interval",
+                                                    quantity_signal: "Volume"});
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -38,22 +41,14 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
         data.valve_pin = Number(valvePin);
 
         const name = data.plant_name.replace(/ /g, '_');
+        data.sensor_under_plate = sensorUnderPlate.state;
         delete data.plant_name;
         delete data.start_signal;
         delete data.quantity_signal;
-        delete data.sensor_under_plate;
+        
 
         data.disabled = false;
-        data.settings = {interval: freq,
-                        start_moisture_thresh: startMoisture,
-                        max_interval: 14 * 24,
-                        min_interval: 12,
-                        volume_ml: vol,
-                        stop_moisture_thresh: quantityMoisture,
-                        max_volume_ml: 300,
-                        sensor_under_plate: sensorUnderPlate.state,
-                        start_signal: startSignal,
-                        quantity_signal: quantitySignal}
+        data.settings = settings;
         
         add(name, data);
         close();
@@ -71,7 +66,7 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
         <div>
             <div className="modal_background" onClick={close}/>
             <div className="modal add_plant_modal_size plant_container">
-                <form method="post" onSubmit={handleSubmit}>
+                <form className="full_width" method="post" onSubmit={handleSubmit}>
                     <TextInput id="plant_name" label="Plant name" text={plantName} setText={setPlantName}/>
                     <TextInput id="scientific_name" label="Scientific name" text={scientificName} setText={setScientificName}/>
                     <TextInput id="image_file" label="Image file" text={imgPath} setText={setImgPath}/>
@@ -95,36 +90,7 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
                                     Sensor under plate
                         </Checkbox>}
 
-                    <Selector id="start_signal" 
-                                label="Start watering"
-                                 options={[{ value: "Moisture", label: "soil moisture"},
-                                           {value: "PlateDry", label: "when the plate is dry"},
-                                           {value: "Interval", label: "at regular intervals"}]}
-                                  onChange={(val) => setStartSignal(val.value)}/>
-
-                    {(startSignal == "Moisture") && <>
-                    <h2>{startMoisture} %</h2>
-                    <Slider min={0} max={100} step={1} defaultValue={startMoisture} onChange={setStartMoisture}/></> } 
-
-                    {(startSignal == "Interval") && <>
-                    <h2>{freq} hours</h2>
-                    <Slider min={0} max={168} step={4} defaultValue={freq} onChange={setFreq}/></>} 
-
-                    <Selector id="quantity_signal" 
-                                label="Stop after"
-                                 options={[{ value: "Volume", label: "volume"},
-                                     {value: "Moisture", label: "soil moisture"},
-                                      {value: "PlateWet", label: "when the plate is wet"}]}
-                                  onChange={(val) => setQuantitySignal(val.value)}/>
-
-
-                    {(quantitySignal == "Volume") && <>
-                    <h2>{vol} ml</h2>
-                    <Slider min={0} max={500} step={10} defaultValue={vol} onChange={setVol}/></>}
-
-                    {(quantitySignal == "Moisture") && <>
-                    <h2>{quantityMoisture} %</h2>
-                    <Slider min={0} max={100} step={1} defaultValue={quantityMoisture} onChange={setQuantityMoisture}/></>}
+                    <PlantSettingsSubpage settings={settings} setSettings={setSettings} hasMoistureSensor={sensorPin != -1} sensorUnderPlate={sensorUnderPlate.state}/>
 
                     <button type="submit" className="button">Done</button>
                     <button type="button" className="button" onClick={close}>Cancel</button>
