@@ -1,0 +1,29 @@
+.navbar {
+    margin: 0.5rem;
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar_container {
+    width: 100%;
+}
+
+.header {
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+    color: var(--primary-light-colour);
+    transition: all 0.2s ease-in-out;
+}
+
+.header_active {
+    color: var(--accent-colour);
+}
+
+.rule {
+    height: 1.5px;
+    border: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--primary-light-colour), rgba(0, 0, 0, 0));
+}

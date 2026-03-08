@@ -23,6 +23,8 @@ class Database {
 		void setup();
 		void initialisePlants(void(*onDataReceived)(AsyncResult& aResult));
 		void setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpdate)(AsyncResult& aResult));
+		void setPinUsed(int pinInd, int newPin);
+		void setSensorPinUsed(int pinInd, int newPin);
 		void updateLastWatered(const char* plantName, unsigned long lastWatered);
 		void updateOnline(unsigned long lastPinged);
 		bool loop();

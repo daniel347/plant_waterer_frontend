@@ -80,6 +80,9 @@ bool valves_engaged = false;
 unsigned long last_checked = 0;
 unsigned long last_pinged = 0;
 
+int available_pins[] = {12, 14, 27, 26};
+int available_sensor_pins[] = {35, 34, 39, 36};
+
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
 #endif
@@ -131,6 +134,10 @@ void setup() {
 
     for (int j = 0; j < n_plants; j++) {
         valves[j]->open();
+    }
+
+    for (int i = 0; i < MAX_N_PLANTS; i++) {
+        database.setPinUsed(i, available_pins[i]);
     }
 
     Serial.println("System ready.");
@@ -249,6 +256,46 @@ void constructDB(const char* data) {
   loaded_data = true;
 }
 
+WaterSettings constructSettingsFromJson(JsonObject settings_json) {
+    StartSignal start_mode;
+    switch (settings_json["start_signal"]) {
+        case "Moisture":
+            start_mode = StartSignal::Moisture;
+            break;
+        case "PlateDry":
+            start_mode = StartSignal::PlateDry;
+            break;
+        case "Interval":
+            start_mode = StartSignal::Interval;
+            break;
+    }
+
+    QuantitySignal quantity_mode;
+    switch (settings_json["quantity_signal"]) {
+        case "Moisture":
+            quantity_mode = QuantitySignal::Moisture;
+            break;
+        case "Volume":
+            quantity_mode = QuantitySignal::Volume;
+            break;
+        case "PlateWet":
+            quantity_mode = QuantitySignal::PlateWet;
+            break;
+    }
+
+    WaterSettings settings = WaterSettings(start_mode,
+                                            settings_json["interval_millis"],
+                                            settings_json["start_moisture_thresh"],
+                                            settings_json["max_interval_millis"],
+                                            settings_json["min_interval_millis"],
+                                            quantity_mode,
+                                            settings_json["volume_ml"],
+                                            settings_json["stop_moisture_thresh"],
+                                            settings_json["max_volume_ml"]);
+
+    return settings;
+}
+
 void createNewPlant(const char* plant_name, JsonObject plant_data) {
     if (n_plants >= MAX_N_PLANTS) {
       Serial.println("Maximum number of supported plants reached!");
@@ -257,6 +304,17 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
     Serial.println("Creating new plant");
     Serial.println(plant_name);
     Serial.println((unsigned long) plant_data["mode_params"]["interval"]["water_frequency"]);
+
+    for (int i = 0; i < MAX_N_PLANTS; i++) {
+        if ((plant_data["valve_pin"] == available_pins[i]) && available_pins[i] >= 0) {
+            available_pins[i] = -1
+            database.setPinUsed(i, -1);
+        }
+        if ((plant_data["sensor_pin"] == available_sensor_pins[i]) && available_sensor_pins[i] >= 0) {
+            available_sensor_pins = -1;
+            database.setSensorPinUsed(i, -1);
+        }
+    }
 
     valves[n_plants] = new ServoValve(int(plant_data["valve_pin"]), VALVE_EN_PIN);
     valves[n_plants]->begin();
@@ -272,8 +330,7 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
     plants[n_plants] = new Plant(plant_name,
                                  valves[n_plants],
                                  sensors[n_plants],
-                                 float(plant_data["mode_params"]["interval"]["water_volume"]),
-                                 (unsigned int) plant_data["mode_params"]["interval"]["water_frequency"],
+                                 constructSettingsFromJson(plant_data["settings"]),
                                  time_t(plant_data["last_watered"]),
                                  plant_data["disabled"]);
     n_plants++;
@@ -304,18 +361,9 @@ void updatePlant(const char* new_data, const char* path) {
                     if (err == DeserializationError::Ok) {
                         serializeJson(new_data_json, Serial);
 
-                        // update mode params
-                        auto mode_params = new_data_json["mode_params"];
-                        if (mode_params) {
-                            auto interval = mode_params["interval"];
-                            if (interval) {
-                                Serial.println(interval["water_volume"].is<int>());
-                                Serial.println(interval["water_frequency"].is<int>());
-                                if (interval["water_volume"].is<int>() && interval["water_frequency"].is<int>()) {
-                                    plants[i]->updateSettings(float(interval["water_volume"]), (unsigned int) interval["water_frequency"]);
-                                }
-                            }
-                            
+                        auto settings_json = new_data_json["settings"];
+                        if (settings_json) {
+                            plants[i]->updateSettings(constructSettingsFromJson(settings_json));
                         }
 
                         // update disabled

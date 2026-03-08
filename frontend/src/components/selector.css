@@ -1,0 +1,17 @@
+.label {
+  font-family: "Quicksand", sans-serif;
+  color: var(--primary-colour);
+
+  text-align: center;
+  width: 100%;
+}
+
+.dropdown {
+  margin: 0.25rem;
+  border-radius: 1.25rem;
+  border-color: var(--primary-light-colour);
+}
+
+.selector {
+    margin: 1rem;
+}

@@ -39,6 +39,18 @@ void Database::updateLastWatered(const char* plantName, unsigned long lastWatere
 	database.set<number_t>(aClient, lastWateredAdd, number_t(lastWatered));
 }
 
+void Database::setPinUsed(int pinInd, int newPin) {
+	char lastWateredAdd[64];
+	sprintf(lastWateredAdd, "/system/available_pins/%i", pinInd);
+	database.set<number_t>(aClient, lastWateredAdd, number_t(newPin));
+}
+
+void Database::setSensorPinUsed(int pinInd, int newPin) {
+	char lastWateredAdd[64];
+	sprintf(lastWateredAdd, "/system/available_sensor_pins/%i", pinInd);
+	database.set<number_t>(aClient, lastWateredAdd, number_t(newPin));
+}
+
 void Database::updateOnline(unsigned long lastPinged) {
 	database.set<number_t>(aClient, "system/online", number_t(lastPinged));
 }

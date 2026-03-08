@@ -15,6 +15,8 @@ export function Garden() {
     const [authenticated, setAuthenticated] = React.useState(false);
     const [user, setUser] = React.useState(null);
     const [ping, setPing] = React.useState(0);
+    const [availablePins, setAvailablePins] = React.useState([12, 14, 26, 27]);
+    const [availableSensorPins, setAvailableSensorPins] = React.useState([35, 34, 39, 36]);
 
     const firebaseConfig = {
       apiKey: "AIzaSyBMkmcudKEwkXGguzcNwZCY7md0rGaHf7I",
@@ -46,6 +48,23 @@ export function Garden() {
                     console.log("No online status data available");
                 }
             }).catch((error) => {console.error(error)});
+            get(child(dbRef, "system/available_pins")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log("System available pins:", snapshot.val());
+                    setAvailablePins([12, 14, 26, 27]); // snapshot.val()
+                } else {
+                    console.log("No available pins data available");
+                }
+            }).catch((error) => {console.error(error)});
+            get(child(dbRef, "system/available_sensor_pins")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log("System available sensor pins:", snapshot.val());
+                    setAvailableSensorPins([35, 34, 39, 36]); // snapshot.val()
+                } else {
+                    console.log("No available sensor pins data available");
+                }
+            }).catch((error) => {console.error(error)});
+
         }
     }, [dataLoaded, authenticated]);
 
@@ -67,6 +86,8 @@ export function Garden() {
         console.log(plants_clone);
         setPlants(plants_clone);
     }
+
+    var available_pins = [12, 14, 27, 26]
 
     useEffect(() => {
       const interval = setInterval(() => {
@@ -96,7 +117,7 @@ export function Garden() {
                         update={(newData) => {updatePlant(plant[0], newData)}}
                         remove={() => {removePlant(plant[0])}}
                         db_ref={dbRef}/>)}
-                <AddPlant add={updatePlant}/>
+                <AddPlant add={updatePlant} available_pins={availablePins} available_sensor_pins={availableSensorPins}/>
             </div>
         </main>
     );

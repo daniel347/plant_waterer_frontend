@@ -54,7 +54,7 @@
 
 .add_plant_modal_size {
   width: 28rem;
-  height: 39rem;
+  height: 48rem;
   padding: 3rem;
 
   @media (max-width: 600px) {
@@ -69,5 +69,28 @@
 
   @media (max-width: 600px) {
     width: 22rem;
+  }
+}
+
+.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+
+  .state {
+    font-family: "Quicksand", sans-serif;
+    color: var(--primary-colour);
+    text-align: center;
+
+    margin-left: 1rem;
+  }
+
+  input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary-colour);
   }
 }

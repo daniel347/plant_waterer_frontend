@@ -73,11 +73,11 @@ export function Plant({plant_name, data, update, remove, db_ref}){
                     <div className="icon_container">
                         <div className="icon_text_container">
                             <WaterIcon className="icon"/>
-                            <h2>{data.mode_params.interval.water_volume} ml</h2>
+                            <h2>{data.settings.volume_ml} ml</h2>
                         </div>
                         <div className="icon_text_container">
                             <TimeIcon className="icon"/>
-                            <h2>{data.mode_params.interval.water_frequency} hours</h2>
+                            <h2>{data.settings.interval_millis / (3600 * 1000)} hours</h2>
                         </div>
                     </div>
                 </div>
