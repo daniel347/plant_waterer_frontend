@@ -8,9 +8,9 @@ void MoistureSensor::begin() {
 }
 
 float MoistureSensor::read_adc_avg() {
-    int adc_read = 0
+    int adc_read = 0;
     for (int i=0; i < num_readings; i++) {
-        int adc_read += analogRead(pin);
+        adc_read += analogRead(pin);
         delay(reading_delay);
     }
     return float(adc_read / num_readings);

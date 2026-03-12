@@ -11,11 +11,9 @@ class MoistureSensor {
     void set_dry_plate_reading();
     bool plate_is_wet();
     bool isPlateSensor;
-
-
-  private:
     int pin;
 
+  private:
     int dry_reading = 0;
     int saturated_reading = 2600;
 

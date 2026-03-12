@@ -18,6 +18,7 @@ void loop() {}
 #include "time.h"
 #include <stdio.h>
 #include <ctime>
+#include <map>
 
 #ifdef FIREBASE
 #define ENABLE_USER_AUTH
@@ -50,6 +51,7 @@ Database database;
 bool initialised = false; 
 bool loaded_data = false;
 bool set_listeners = false;
+bool update_available_pins = false;
 #endif //FIREBASE
 
 
@@ -136,10 +138,6 @@ void setup() {
         valves[j]->open();
     }
 
-    for (int i = 0; i < MAX_N_PLANTS; i++) {
-        database.setPinUsed(i, available_pins[i]);
-    }
-
     Serial.println("System ready.");
     delay(1000);
 }
@@ -148,8 +146,8 @@ void setup() {
 void loop() {
 #ifdef CYCLE_VALVE
   cycleValve(&v);
-#elifdef TEST_MOISTURE_SENSOR
-  testMoistureSensor(&s);
+// #elifdef TEST_MOISTURE_SENSOR
+//   testMoistureSensor(&s);
 #else
 
 #ifdef FIREBASE
@@ -166,6 +164,11 @@ void loop() {
       Firebase.printf("Auth Token: %s\n", database.app.getToken().c_str());
       Firebase.printf("Refresh Token: %s\n", database.app.getRefreshToken().c_str());
 
+      for (int i = 0; i < MAX_N_PLANTS; i++) {
+          database.setPinUsed(i, available_pins[i]);
+          database.setSensorPinUsed(i, available_sensor_pins[i]);
+      }
+
       database.initialisePlants(onInitialisePlants);
 #else
       deserializeJson(plantDB, json_str);
@@ -177,6 +180,18 @@ void loop() {
     if (loaded_data && !set_listeners) {
         database.setParamUpdates(n_plants, plants, onPlantUpdate);
         set_listeners = true;
+    }
+    if (update_available_pins) {
+        for (int i = 0; i < n_plants; i++) {
+            for (int j =0; j < MAX_N_PLANTS; j++) {
+                if (valves[i]->servoPin == available_pins[j]) {
+                    database.setPinUsed(j, -1);
+                }
+                if (sensors[i] && (sensors[i]->pin == available_sensor_pins[j])) {
+                    database.setSensorPinUsed(j, -1);
+                }
+            }
+        }
     }
 #endif
     if (millis() - last_checked > 60000) {
@@ -254,41 +269,16 @@ void constructDB(const char* data) {
     createNewPlant(kv.key().c_str(), kv.value());
   }
   loaded_data = true;
+  update_available_pins = true;
 }
 
 WaterSettings constructSettingsFromJson(JsonObject settings_json) {
-    StartSignal start_mode;
-    switch (settings_json["start_signal"]) {
-        case "Moisture":
-            start_mode = StartSignal::Moisture;
-            break;
-        case "PlateDry":
-            start_mode = StartSignal::PlateDry;
-            break;
-        case "Interval":
-            start_mode = StartSignal::Interval;
-            break;
-    }
-
-    QuantitySignal quantity_mode;
-    switch (settings_json["quantity_signal"]) {
-        case "Moisture":
-            quantity_mode = QuantitySignal::Moisture;
-            break;
-        case "Volume":
-            quantity_mode = QuantitySignal::Volume;
-            break;
-        case "PlateWet":
-            quantity_mode = QuantitySignal::PlateWet;
-            break;
-    }
-
-    WaterSettings settings = WaterSettings(start_mode,
-                                            settings_json["interval_millis"],
+    WaterSettings settings = WaterSettings(settings_json["start_signal"],
+                                            int(settings_json["interval"]),
                                             settings_json["start_moisture_thresh"],
-                                            settings_json["max_interval_millis"],
-                                            settings_json["min_interval_millis"],
-                                            quantity_mode,
+                                            int(settings_json["max_interval"]),
+                                            int(settings_json["min_interval"]),
+                                            settings_json["quantity_signal"],
                                             settings_json["volume_ml"],
                                             settings_json["stop_moisture_thresh"],
                                             settings_json["max_volume_ml"]);
@@ -305,22 +295,11 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
     Serial.println(plant_name);
     Serial.println((unsigned long) plant_data["mode_params"]["interval"]["water_frequency"]);
 
-    for (int i = 0; i < MAX_N_PLANTS; i++) {
-        if ((plant_data["valve_pin"] == available_pins[i]) && available_pins[i] >= 0) {
-            available_pins[i] = -1
-            database.setPinUsed(i, -1);
-        }
-        if ((plant_data["sensor_pin"] == available_sensor_pins[i]) && available_sensor_pins[i] >= 0) {
-            available_sensor_pins = -1;
-            database.setSensorPinUsed(i, -1);
-        }
-    }
-
     valves[n_plants] = new ServoValve(int(plant_data["valve_pin"]), VALVE_EN_PIN);
     valves[n_plants]->begin();
     valves[n_plants]->open();
 
-    if (plant_data["sensor_pin"].is<int>() && plant_data["sensor_under_plate"].is<bool>()) {
+    if (plant_data["sensor_pin"].is<int>() && plant_data["sensor_under_plate"].is<bool>() && (plant_data["sensor_pin"] >= 0)) {
         sensors[n_plants] = new MoistureSensor(plant_data["sensor_pin"], plant_data["sensor_under_plate"]);
     }
     else {
@@ -384,6 +363,7 @@ void updatePlant(const char* new_data, const char* path) {
             if (err == DeserializationError::Ok) {
                 serializeJson(new_data_json, Serial);
                 createNewPlant(path, new_data_json.as<JsonObject>());
+                update_available_pins = true;
             } else {
                 Serial.println("Could not deserialise data");
             }

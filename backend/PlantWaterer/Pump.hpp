@@ -1,5 +1,6 @@
 #ifndef PUMP
 #define PUMP
+#include <ctime>
 
 class Pump {
   public:

@@ -12,12 +12,10 @@ import PlantSettingsSubpage from "../components/plant_settings_subpage";
 
 
 export function NewPlantModal({add, close, available_pins, available_sensor_pins}) {
-
-
     const [plantName, setPlantName] = React.useState("");
     const [scientificName, setScientificName] = React.useState("");
     const [imgPath, setImgPath] = React.useState("");
-    const [valvePin, setValvePin] = React.useState("");
+    const [valvePin, setValvePin] = React.useState(-1);
     const [sensorPin, setSensorPin] = React.useState(-1);
     const sensorUnderPlate = useCheckboxState();
 
@@ -38,7 +36,9 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
         const form = e.target;
         const formData = new FormData(form);
         const data = Object.fromEntries(formData);
-        data.valve_pin = Number(valvePin);
+
+        data.valve_pin = valvePin;
+        data.sensor_pin = sensorPin;
 
         const name = data.plant_name.replace(/ /g, '_');
         data.sensor_under_plate = sensorUnderPlate.state;
@@ -74,7 +74,7 @@ export function NewPlantModal({add, close, available_pins, available_sensor_pins
                     <Selector id="valve_pin" 
                                 label="Pin"
                                  options={available_pins.map((v) => {return({ value: v, label: v})})}
-                                  onChange={setValvePinNumber}/>
+                                  onChange={(val) => setValvePin(val.value)}/>
 
                     <Selector id="sensor_pin" 
                                 label="Moisture sensor"

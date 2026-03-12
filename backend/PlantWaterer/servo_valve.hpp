@@ -8,9 +8,9 @@ class ServoValve {
     void begin();
     void open();
     void close();
+    int servoPin;
 
   private:
-    int servoPin;
     int valveEnPin;
     Servo valveServo;
     int servoMoveDelay = 500;  //ms

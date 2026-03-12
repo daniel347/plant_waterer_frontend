@@ -51,7 +51,7 @@ export function Garden() {
             get(child(dbRef, "system/available_pins")).then((snapshot) => {
                 if (snapshot.exists()) {
                     console.log("System available pins:", snapshot.val());
-                    setAvailablePins([12, 14, 26, 27]); // snapshot.val()
+                    setAvailablePins(snapshot.val());
                 } else {
                     console.log("No available pins data available");
                 }
@@ -59,7 +59,7 @@ export function Garden() {
             get(child(dbRef, "system/available_sensor_pins")).then((snapshot) => {
                 if (snapshot.exists()) {
                     console.log("System available sensor pins:", snapshot.val());
-                    setAvailableSensorPins([35, 34, 39, 36]); // snapshot.val()
+                    setAvailableSensorPins(snapshot.val());
                 } else {
                     console.log("No available sensor pins data available");
                 }
@@ -86,8 +86,6 @@ export function Garden() {
         console.log(plants_clone);
         setPlants(plants_clone);
     }
-
-    var available_pins = [12, 14, 27, 26]
 
     useEffect(() => {
       const interval = setInterval(() => {

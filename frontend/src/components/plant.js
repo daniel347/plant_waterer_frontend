@@ -3,8 +3,14 @@ import Slider from 'rc-slider';
 import {Graph} from "./graph";
 import 'rc-slider/assets/index.css';
 import './plant.css';
+
 import TimeIcon from "../assets/TimeIcon";
 import WaterIcon from "../assets/WaterIcon";
+import PlateDryIcon from "../assets/PlateDryIcon"
+import PlateWetIcon from "../assets/PlateWetIcon"
+import StartMoisture from "../assets/StartMoisture"
+import StopMoisture from "../assets/StopMoisture"
+
 import {PlantEditModal} from "../modals/plant_edit_modal";
 import {ConfirmModal} from "../modals/confirm_modal";
 import ClickAndHoldWrapper from "react-click-and-hold/core";
@@ -71,14 +77,40 @@ export function Plant({plant_name, data, update, remove, db_ref}){
                     <Graph db_ref={db_ref} plant_name={plant_name}/>
 
                     <div className="icon_container">
+                        {(data.settings.start_signal == "Interval") && 
+                        <div className="icon_text_container">
+                            <TimeIcon className="icon"/>
+                            <h2>{data.settings.interval} hours</h2>
+                        </div>}
+
+                        {(data.settings.start_signal == "Moisture") && 
+                        <div className="icon_text_container">
+                            <StartMoisture className="icon"/>
+                            <h2>{data.settings.start_moisture_thresh} %</h2>
+                        </div>}
+
+                        {(data.settings.start_signal == "PlateDry") && 
+                        <div className="icon_text_container">
+                            <PlateDryIcon className="icon"/>
+                        </div>}
+
+
+                        {(data.settings.quantity_signal == "Volume") && 
                         <div className="icon_text_container">
                             <WaterIcon className="icon"/>
                             <h2>{data.settings.volume_ml} ml</h2>
-                        </div>
+                        </div>}
+                        
+                        {(data.settings.quantity_signal == "Moisture") && 
                         <div className="icon_text_container">
-                            <TimeIcon className="icon"/>
-                            <h2>{data.settings.interval_millis / (3600 * 1000)} hours</h2>
-                        </div>
+                            <StopMoisture className="icon"/>
+                            <h2>{data.settings.stop_moisture_thresh} %</h2>
+                        </div>}
+
+                        {(data.settings.quantity_signal == "PlateWet") && 
+                        <div className="icon_text_container">
+                            <PlateWetIcon className="icon"/>
+                        </div>}
                     </div>
                 </div>
             </ClickAndHoldWrapper>

@@ -2,29 +2,30 @@
 #ifndef PLANT
 #define PLANT
 #include "servo_valve.hpp"
+#include "MoistureSensor.hpp"
 #include "pump.hpp"
 #include <ctime>
 
 enum StartSignal {
-  Interval,
-  Moisture,
-  PlateDry,
+    StartInterval,
+    StartMoisture,
+    StartPlateDry,
 }; 
 
 enum QuantitySignal {
-    Volume,
-    Moisture,
-    PlateWet.
-}
+    QuantityVolume,
+    QuantityMoisture,
+    QuantityPlateWet,
+};
 
 class WaterSettings {
     public:
-        WaterSettings(StartSignal _startMode,
+        WaterSettings(const char* _startMode,
                       unsigned long _intervalMillis,
                       float _startMoistureThresh,
                       unsigned long _maxIntervalMillis,
-                      unsigned long _minIntervalMillis
-                      QuantitySignal _quantityMode,
+                      unsigned long _minIntervalMillis,
+                      const char* _quantityMode,
                       float _volumeML,
                       float _stopMoistureThresh,
                       float _maxVolumeML);
@@ -55,7 +56,7 @@ class WaterSettings {
 
         // shared
         float maxVolumeML;  // stop watering at this volume even if the conditions are not satisfied
-}
+};
 
 class Plant {
 public:

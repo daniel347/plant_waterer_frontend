@@ -1,5 +1,5 @@
 #include "pump.hpp"
-#include "util.cpp"
+#include "util.h"
 #include <Arduino.h>
 
 Pump::Pump(int pin, float flowRateMLPerMin)
@@ -25,7 +25,7 @@ void Pump::stopPump() {
 }
 
 float Pump::pumpedSoFar() {
-    now = getEpochTime();
+    time_t now = getEpochTime();
     unsigned long pumpTimeS = (now - pumpOnTime);
     return float(pumpTimeS) * flowRate / 60.0;
 }

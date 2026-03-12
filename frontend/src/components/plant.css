@@ -82,3 +82,7 @@
       height: 42rem;
     }
 }
+
+.subpage_animate {
+  transition: all 0.2s ease-in-out;
+}
