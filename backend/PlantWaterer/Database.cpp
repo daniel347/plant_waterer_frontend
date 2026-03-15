@@ -62,6 +62,25 @@ void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpda
 	database.get(streamClient, "/plants", onPlantUpdate, true, "streamTask");
 }
 
+void Database::updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture, int dataPos) {
+	char sensor_data_path[64];
+	char obj[128];
+	sprintf(obj, "{\"t\":%i, \"v\":%.2f}", t, moisture);
+
+	if (sensorUnderPlate) {
+		sprintf(sensor_data_path, "/sensor/%s/tray/%i", plantName, dataPos);
+	}
+	else {
+		sprintf(sensor_data_path, "/sensor/%s/moisture/%i", plantName, dataPos);
+	}
+
+	database.set<object_t>(aClient, sensor_data_path, object_t(obj));
+}
+
+void Database::getDataPos(void (*onGetDataPos)(AsyncResult& aResult)) {
+	database.get(aClient, "/sensor/data_pos", onGetDataPos, false, "RealtimeDatabase_GetTask");
+}
+
 bool Database::loop() {
 	// Serial.println("starting loop");
 	app.loop();
@@ -155,5 +174,7 @@ void processData(AsyncResult& aResult) {
 	auto empty = [](const char* data) {};
 	processDataBase(aResult, empty);
 }
+
+
 
 #endif // COMPILE_FIREBASE

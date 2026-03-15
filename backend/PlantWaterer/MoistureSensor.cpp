@@ -18,7 +18,7 @@ float MoistureSensor::read_adc_avg() {
 
 float MoistureSensor::read_water_saturation() {
     float read_avg = read_adc_avg();
-    return float(read_avg - dry_reading) / float(saturated_reading);
+    return (float(read_avg - dry_reading) / float(saturated_reading - dry_reading)) * 100.0;
 }
 
 void MoistureSensor::set_dry_plate_reading() {

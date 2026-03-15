@@ -60,13 +60,16 @@ class WaterSettings {
 
 class Plant {
 public:
-    Plant(const char* name, ServoValve* valve, MoistureSensor* sensor, WaterSettings settings, time_t lastWatered, bool isDisabled);
+    Plant(const char* name, ServoValve* valve, MoistureSensor* sensor, WaterSettings settings, time_t lastWatered, bool isDisabled, bool _sensorUnderPlate);
     void water(Pump& pump);
     bool needsWater();
     const char* getName();
     void updateSettings(WaterSettings _settings);
+    float readSensor();
     time_t lastWatered;
     bool disabled;
+    bool hasSensor;
+    bool sensorUnderPlate;
 
 private:
     const char* plantName;

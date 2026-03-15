@@ -14,8 +14,8 @@ class MoistureSensor {
     int pin;
 
   private:
-    int dry_reading = 0;
-    int saturated_reading = 2600;
+    int dry_reading = 2600;
+    int saturated_reading = 900;
 
     float plate_dry_reading = 0;
 

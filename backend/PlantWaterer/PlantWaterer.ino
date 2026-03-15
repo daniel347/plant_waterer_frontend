@@ -52,8 +52,8 @@ bool initialised = false;
 bool loaded_data = false;
 bool set_listeners = false;
 bool update_available_pins = false;
+bool data_pos_set = true;
 #endif //FIREBASE
-
 
 // ================== Hardware Settings ==================
 #define PUMP_PIN 25
@@ -70,10 +70,6 @@ ServoValve* valves[MAX_N_PLANTS];
 MoistureSensor* sensors[MAX_N_PLANTS];
 
 // ================== Plants ==================
-// Plant plant1("Chilli", &valve1, 200.0, 24); // 50ml every 24 hours
-// Plant plant2("Rosemary",  &valve2, 40.0, 24);
-// Plant plant3("Mint",   &valve3, 60.0, 48);
-// Plant plant4("Rose",   &valve4, 55.0, 24);
 
 Plant* plants[MAX_N_PLANTS];
 int n_plants = 0;
@@ -84,6 +80,8 @@ unsigned long last_pinged = 0;
 
 int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
+
+int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -164,20 +162,15 @@ void loop() {
       Firebase.printf("Auth Token: %s\n", database.app.getToken().c_str());
       Firebase.printf("Refresh Token: %s\n", database.app.getRefreshToken().c_str());
 
-      for (int i = 0; i < MAX_N_PLANTS; i++) {
-          database.setPinUsed(i, available_pins[i]);
-          database.setSensorPinUsed(i, available_sensor_pins[i]);
-      }
-
       database.initialisePlants(onInitialisePlants);
 #else
       deserializeJson(plantDB, json_str);
       constructDB();
 #endif
-      // setDummyData();
     }
 #ifdef FIREBASE
     if (loaded_data && !set_listeners) {
+        database.getDataPos(onGetDataPos);
         database.setParamUpdates(n_plants, plants, onPlantUpdate);
         set_listeners = true;
     }
@@ -192,6 +185,7 @@ void loop() {
                 }
             }
         }
+        update_available_pins = false;
     }
 #endif
     if (millis() - last_checked > 60000) {
@@ -226,7 +220,17 @@ void loop() {
         getLocalTime(&timeinfo);
         auto last_pinged = mktime(&timeinfo);
         database.updateOnline(last_pinged);
-      }
+
+        // add moisture data to the plot
+        if (data_pos_set) {
+            for (int i; i < n_plants; i++) {
+                if (plants[i]->hasSensor) {
+                    database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, last_pinged, plants[i]->readSensor(),sensor_data_pos[i]);
+                    }
+                }
+            }
+        }
+        
 #endif
 
       if (valves_engaged) {
@@ -311,7 +315,8 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
                                  sensors[n_plants],
                                  constructSettingsFromJson(plant_data["settings"]),
                                  time_t(plant_data["last_watered"]),
-                                 plant_data["disabled"]);
+                                 plant_data["disabled"],
+                                 plant_data["sensor_under_plate"]);
     n_plants++;
 }
 
@@ -371,6 +376,20 @@ void updatePlant(const char* new_data, const char* path) {
     }
 }
 
+void setDataPos(const char* data) {
+    JsonDocument pos_data;
+    deserializeJson(pos_data, data);
+    
+    for (JsonPair kv : pos_data.as<JsonObject>()) {
+        for (int i=0; i < n_plants; i++) {
+            if (strcmp(kv.key().c_str(), plants[i]->getName()) == 0) {
+                sensor_data_pos[i] = kv.value();
+            }
+        }
+    }
+    data_pos_set = true;
+}
+
 void onInitialisePlants(AsyncResult& aResult) {
     processDataBase(aResult, constructDB);
 }
@@ -378,6 +397,11 @@ void onInitialisePlants(AsyncResult& aResult) {
 void onPlantUpdate(AsyncResult& aResult) {
     processDataStream(aResult, updatePlant);
 }
+
+void onGetDataPos(AsyncResult& aResult) {
+    processDataBase(aResult, setDataPos);
+}
+
 
 #endif //FIREBASE
 

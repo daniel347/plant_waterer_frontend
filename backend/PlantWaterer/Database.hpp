@@ -17,6 +17,11 @@
 
 using AsyncClient = AsyncClientClass;
 
+struct {
+    time_t t;
+    char key[32];
+} DatumTimestamp;
+
 class Database {
 	public:
 		Database();
@@ -26,7 +31,10 @@ class Database {
 		void setPinUsed(int pinInd, int newPin);
 		void setSensorPinUsed(int pinInd, int newPin);
 		void updateLastWatered(const char* plantName, unsigned long lastWatered);
+		void updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture); 
 		void updateOnline(unsigned long lastPinged);
+		void getDataPos(void (*onGetDataPos)(AsyncResult& aResult));
+		void updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture, int dataPos);
 		bool loop();
 		FirebaseApp app;
 

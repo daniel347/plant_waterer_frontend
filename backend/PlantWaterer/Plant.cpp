@@ -28,9 +28,9 @@ WaterSettings::WaterSettings(const char* _startMode,
         else if (strcmp(_quantityMode, "Volume") == 0) { quantityMode = QuantitySignal::QuantityVolume; }
     }
 
-Plant::Plant(const char* name, ServoValve* valve, MoistureSensor* sensor, WaterSettings _settings, time_t lastWateredT=0, bool isDisabled=false)
-: plantName(name), valvePtr(valve), sensorPtr(sensor), settings(_settings), lastWatered(lastWateredT),
-   disabled(isDisabled) {}
+Plant::Plant(const char* name, ServoValve* valve, MoistureSensor* sensor, WaterSettings _settings, time_t lastWateredT=0, bool isDisabled=false, bool _sensorUnderPlate=false)
+: plantName(name), valvePtr(valve), sensorPtr(sensor), settings(_settings), lastWatered(lastWateredT), 
+   disabled(isDisabled), sensorUnderPlate(_sensorUnderPlate), hasSensor((sensor != NULL)){}
 
 void Plant::water(Pump& pump) {
     valvePtr->open();
@@ -42,6 +42,7 @@ void Plant::water(Pump& pump) {
         while (sensorPtr->read_water_saturation() < settings.stopMoistureThresh &&
                      pump.pumpedSoFar() <settings.maxVolumeML) {
             delay(2000);
+            Serial.println(sensorPtr->read_water_saturation());
         };
         pump.stopPump();
     }
@@ -79,6 +80,17 @@ bool Plant::needsWater() {
     }
     else if (settings.startMode == StartSignal::StartPlateDry) {
         return !sensorPtr->plate_is_wet();
+    }
+}
+
+float Plant::readSensor() {
+    if (hasSensor) {
+        if (sensorUnderPlate) {
+            return sensorPtr->plate_is_wet();
+        }
+        else {
+            return sensorPtr->read_water_saturation();
+        }
     }
 }
 

@@ -74,6 +74,11 @@ export function Garden() {
         const plants_clone = structuredClone(plants);
         plants_clone[name] = {...plants_clone[name], ...data};
         update(child(dbRef, "plants/"+name), data);
+
+        if (data.sensor_pin != -1) {
+            update(child(dbRef, "sensor/data_pos/"+name), 0);
+        }
+
         console.log(plants_clone);
         setPlants(plants_clone);
     }
@@ -83,6 +88,11 @@ export function Garden() {
         const plants_clone = structuredClone(plants);
         delete plants_clone[name];
         remove(child(dbRef, "plants/"+name));
+
+        remove(child(dbRef, 'sensor/data_pos/'+name))
+        remove(child(dbRef, 'sensor/'+name+'/moisture'))
+        remove(child(dbRef, 'sensor/'+name+'/tray'))
+
         console.log(plants_clone);
         setPlants(plants_clone);
     }
