@@ -62,7 +62,12 @@ bool data_pos_set = true;
 
 #define MAX_N_PLANTS 4
 
-// ================== Classes ==================
+// ================== Commands ==================
+
+bool purge = false;
+bool clean = false;
+char* set_plate_dry_plant[32];
+bool set_plate_dry = false;
 
 // ================== Hardware Objects ==================
 Pump pump(PUMP_PIN, PUMP_FLOW_RATE_ML_PER_MIN);
@@ -241,6 +246,31 @@ void loop() {
       }
     }
 #ifdef FIREBASE
+    if (purge) {
+        // clear the pipes for each of the plants
+        for (int i = 0; i < n_plants; i++) {
+            plants[i]->clearPipe(20);
+        }
+        purge = false;
+    }
+    if (clean) {
+        // clear the pipes for each of the plants
+        for (int i = 0; i < n_plants; i++) {
+            plants[i]->clearPipe(200);
+        }
+        clean = false;
+    }
+    if (set_plate_dry) {
+        for (int i = 0; i < n_plants; i++) {
+            Serial.println("Setting plate dry");
+            if ((strcmp(plants[i]->getName(), set_plate_dry_plant) == 0) && (plants[i]->hasSensor) && (plants[i]->sensorUnderPlate)) {
+                plants[i]->setPlateDryBaseline();
+            };
+        }
+        set_plate_dry = false;
+    }
+#endif // FIREBASE
+#ifdef FIREBASE
   }
   else {
     // Serial.println("Not ready");
@@ -390,6 +420,28 @@ void setDataPos(const char* data) {
     data_pos_set = true;
 }
 
+void executeCommand(const char* data, const char* path) {
+    char *tmp = strrchr(path, '/');
+    if (tmp) {
+        path = tmp+1;
+    }
+
+    if strcmp(data, "true") {
+        Serial.println(path);
+        if (strcmp(path, "purge") == 0) {
+            purge = true;
+        }
+        else if (strcmp(path, "clean") == 0) {
+            clean = true;
+        }
+    }
+    else if (strcmp(path, "set_plant_plate_dry") == 0) {
+        strcpy(set_plate_dry_plant, "");
+        strcpy(set_plate_dry_plant, data);
+        set_plate_dry = true;
+    }
+}
+
 void onInitialisePlants(AsyncResult& aResult) {
     processDataBase(aResult, constructDB);
 }
@@ -401,6 +453,9 @@ void onPlantUpdate(AsyncResult& aResult) {
 void onGetDataPos(AsyncResult& aResult) {
     processDataBase(aResult, setDataPos);
 }
+
+void onCommand(AsyncResult& aResult) {
+    processDataStream(aResult, executeCommand)
 
 
 #endif //FIREBASE

@@ -44,6 +44,16 @@
 
 .login_modal_size {
   width: 25rem;
+  height: 29rem;
+
+  @media (max-width: 600px) {
+    width: 18rem;
+    height: 22rem;
+  }
+}
+
+.login_modal_size {
+  width: 25rem;
   height: 25rem;
 
   @media (max-width: 600px) {

@@ -62,6 +62,10 @@ void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpda
 	database.get(streamClient, "/plants", onPlantUpdate, true, "streamTask");
 }
 
+void Database::setCommandListener(void (*onCommand)(AsyncResult& aResult)) {
+	database.get(streamClient, "/command", onCommand, true, "streamTask");
+}
+
 void Database::updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture, int dataPos) {
 	char sensor_data_path[64];
 	char obj[128];

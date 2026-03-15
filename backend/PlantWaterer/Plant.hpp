@@ -66,6 +66,8 @@ public:
     const char* getName();
     void updateSettings(WaterSettings _settings);
     float readSensor();
+    void clearPipe(Pump& pump, float vol);
+    void setPlateDryBaseline();
     time_t lastWatered;
     bool disabled;
     bool hasSensor;

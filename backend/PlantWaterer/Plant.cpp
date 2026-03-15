@@ -94,8 +94,18 @@ float Plant::readSensor() {
     }
 }
 
+void Plant::setPlateDryBaseline() {
+    sensorPtr->set_dry_plate_reading();
+}
+
 const char* Plant::getName() { return plantName; }
 
 void Plant::updateSettings(WaterSettings _settings) {
     settings = _settings;
+}
+
+void Plant::clearPipe(Pump& pump, float vol) {
+    valvePtr->open();
+    pump.pumpVolume(vol);
+    valvePtr->close();
 }

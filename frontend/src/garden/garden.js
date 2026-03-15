@@ -7,6 +7,7 @@ import {getDatabase, ref, child, get, remove, update} from "firebase/database";
 import {initializeApp} from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import {LoginModal} from "../modals/login_modal";
+import { MaintenanceButton } from "../components/maintenance_button";
 
 
 export function Garden() {
@@ -114,6 +115,7 @@ export function Garden() {
 
     return (
         <main>
+            <MaintenanceButton dbRef={dbRef} plants={plants}/>
             {!authenticated && <LoginModal setAuthenticated={setAuthenticated} setUser={setUser}/>}
             <h1 className="garden_title">My Garden</h1>
             {(Date.now()/1000 - ping > 3600) && <h2 className="offline">System is offline</h2>}
