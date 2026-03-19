@@ -23,10 +23,14 @@ float MoistureSensor::read_water_saturation() {
 
 void MoistureSensor::set_dry_plate_reading() {
     plate_dry_reading = read_adc_avg();
+    Serial.println("Plate dry reading:");
+    Serial.println(plate_dry_reading);
 }
 
 bool MoistureSensor::plate_is_wet() {
     float read_avg = read_adc_avg();
+    Serial.println("reading:");
+    Serial.println(read_avg);
     return (plate_dry_reading - read_avg) > plate_wet_thresh;
 }
 

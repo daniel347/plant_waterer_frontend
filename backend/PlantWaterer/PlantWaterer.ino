@@ -66,7 +66,7 @@ bool data_pos_set = true;
 
 bool purge = false;
 bool clean = false;
-char* set_plate_dry_plant[32];
+char set_plate_dry_plant[32];
 bool set_plate_dry = false;
 
 // ================== Hardware Objects ==================
@@ -177,31 +177,36 @@ void loop() {
     if (loaded_data && !set_listeners) {
         database.getDataPos(onGetDataPos);
         database.setParamUpdates(n_plants, plants, onPlantUpdate);
+        database.setCommandListener(onCommand);
         set_listeners = true;
     }
     if (update_available_pins) {
-        for (int i = 0; i < n_plants; i++) {
-            for (int j =0; j < MAX_N_PLANTS; j++) {
+        for (int j =0; j < MAX_N_PLANTS; j++) {
+            bool pin_used = false;
+            bool sensor_pin_used = false;
+            for (int i = 0; i < n_plants; i++) {
                 if (valves[i]->servoPin == available_pins[j]) {
                     database.setPinUsed(j, -1);
+                    pin_used = true;
                 }
                 if (sensors[i] && (sensors[i]->pin == available_sensor_pins[j])) {
                     database.setSensorPinUsed(j, -1);
+                    sensor_pin_used = true;
                 }
             }
+
+            if (!pin_used) {database.setPinUsed(j, available_pins[j]);}
+            if (!sensor_pin_used) {database.setSensorPinUsed(j, available_sensor_pins[j]);}
         }
         update_available_pins = false;
     }
 #endif
-    if (millis() - last_checked > 60000) {
+    if (millis() - last_checked > 60000) { // 60000
       last_checked = millis();
       if (!valves_engaged) {
           for (int i = 0; i < n_plants; i++) {
               if (plants[i]->needsWater()) {
-                  for (int j = 0; j < n_plants; j++) {
-                      valves[j]->close();
-                  }
-                  valves_engaged = true;
+                  engageValves(true);
                   break;
               }
           }
@@ -219,7 +224,7 @@ void loop() {
       }
 
 #ifdef FIREBASE
-      if (last_checked - last_pinged > 3600000) {
+      if (last_checked - last_pinged > 3600000) { // 3600000
         // ping every hour
         struct tm timeinfo;
         getLocalTime(&timeinfo);
@@ -228,9 +233,10 @@ void loop() {
 
         // add moisture data to the plot
         if (data_pos_set) {
-            for (int i; i < n_plants; i++) {
+            for (int i=0; i < n_plants; i++) {
                 if (plants[i]->hasSensor) {
                     database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, last_pinged, plants[i]->readSensor(),sensor_data_pos[i]);
+                    sensor_data_pos[i] += 1;
                     }
                 }
             }
@@ -238,27 +244,35 @@ void loop() {
         
 #endif
 
-      if (valves_engaged) {
-          for (int j = 0; j < n_plants; j++) {
-              valves[j]->open();
-          }
-          valves_engaged = false;
-      }
+      if (valves_engaged) {engageValves(false);}
     }
 #ifdef FIREBASE
     if (purge) {
+        Serial.println("Purging");
         // clear the pipes for each of the plants
+        engageValves(true);
+
         for (int i = 0; i < n_plants; i++) {
-            plants[i]->clearPipe(20);
+            plants[i]->clearPipe(pump, 20);
         }
         purge = false;
+
+        engageValves(false);
+        database.clearCommandFlags();
+
     }
     if (clean) {
-        // clear the pipes for each of the plants
+        Serial.println("Cleaning");
+        // pump water through all paths for cleaning
+
+        engageValves(true);
         for (int i = 0; i < n_plants; i++) {
-            plants[i]->clearPipe(200);
+            plants[i]->clearPipe(pump, 200);
         }
         clean = false;
+
+        engageValves(false);
+        database.clearCommandFlags();
     }
     if (set_plate_dry) {
         for (int i = 0; i < n_plants; i++) {
@@ -268,6 +282,7 @@ void loop() {
             };
         }
         set_plate_dry = false;
+        database.clearCommandFlags();
     }
 #endif // FIREBASE
 #ifdef FIREBASE
@@ -363,7 +378,7 @@ void updatePlant(const char* new_data, const char* path) {
             path = tmp+1;
         }
         Serial.println(path);
-        if (strcmp(path, "last_watered") == 0) { // nothing to do
+        if (strcmp(path, "last_watered") == 0) { // nothing to do - shouldnt we update the plant last watered?
             Serial.println("last watered update");
             return;
         }
@@ -426,7 +441,7 @@ void executeCommand(const char* data, const char* path) {
         path = tmp+1;
     }
 
-    if strcmp(data, "true") {
+    if (strcmp(data, "true") == 0) {
         Serial.println(path);
         if (strcmp(path, "purge") == 0) {
             purge = true;
@@ -435,7 +450,7 @@ void executeCommand(const char* data, const char* path) {
             clean = true;
         }
     }
-    else if (strcmp(path, "set_plant_plate_dry") == 0) {
+    else if (strcmp(path, "calibrate_plate_dry") == 0) {
         strcpy(set_plate_dry_plant, "");
         strcpy(set_plate_dry_plant, data);
         set_plate_dry = true;
@@ -455,7 +470,8 @@ void onGetDataPos(AsyncResult& aResult) {
 }
 
 void onCommand(AsyncResult& aResult) {
-    processDataStream(aResult, executeCommand)
+    processDataStream(aResult, executeCommand);
+}
 
 
 #endif //FIREBASE
@@ -467,6 +483,14 @@ void cycleValve(ServoValve *v) {
     v->close();
     Serial.println("closed");
     delay(3000);
+}
+
+void engageValves(bool engage) {
+    for (int j = 0; j < n_plants; j++) {
+        if (engage) {valves[j]->close();}
+        else {valves[j]->open();}
+    }
+    valves_engaged = engage;
 }
 
 void testMoistureSensor(MoistureSensor *s) {

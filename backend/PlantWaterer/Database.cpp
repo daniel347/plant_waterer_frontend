@@ -19,6 +19,8 @@ void Database::setup() {
 	// stream_ssl_client.setConnectionTimeout(1000);
 	// stream_ssl_client.setHandshakeTimeout(5);
 
+	command_stream_client.setInsecure();
+
 	// Initialize Firebase
 	Serial.println("Initialising app");
 	initializeApp(aClient, app, getAuth(user_auth), processDataSimple, "authTask");
@@ -27,6 +29,7 @@ void Database::setup() {
 
 	Serial.println("setting stream filters");
   streamClient.setSSEFilters("put,patch");
+  commandStreamClient.setSSEFilters("put,patch");
 }
 
 void Database::initialisePlants(void (*onDataReceived)(AsyncResult& aResult)) {
@@ -63,7 +66,11 @@ void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpda
 }
 
 void Database::setCommandListener(void (*onCommand)(AsyncResult& aResult)) {
-	database.get(streamClient, "/command", onCommand, true, "streamTask");
+	database.get(commandStreamClient, "/command", onCommand, true, "streamTask");
+}
+
+void Database::clearCommandFlags() {
+	database.set<object_t>(aClient, "/command", object_t("{\"clean\":false, \"purge\":false, \"calibrate_plate_dry\":\"\"}"));
 }
 
 void Database::updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture, int dataPos) {

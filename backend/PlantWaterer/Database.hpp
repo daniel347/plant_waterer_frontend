@@ -28,6 +28,8 @@ class Database {
 		void setup();
 		void initialisePlants(void(*onDataReceived)(AsyncResult& aResult));
 		void setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpdate)(AsyncResult& aResult));
+		void setCommandListener(void (*onCommand)(AsyncResult& aResult));
+		void clearCommandFlags();
 		void setPinUsed(int pinInd, int newPin);
 		void setSensorPinUsed(int pinInd, int newPin);
 		void updateLastWatered(const char* plantName, unsigned long lastWatered);
@@ -40,10 +42,11 @@ class Database {
 
 
 	private:
-		WiFiClientSecure ssl_client, stream_client;
+		WiFiClientSecure ssl_client, stream_client, command_stream_client;
 
 		AsyncClient aClient = AsyncClient(ssl_client);
 		AsyncClient streamClient = AsyncClient(stream_client);
+		AsyncClient commandStreamClient = AsyncClient(command_stream_client);
 
 		UserAuth user_auth = UserAuth(Web_API_KEY, USER_EMAIL, USER_PASS, 3000 /* expire period in seconds (<3600) */);
 

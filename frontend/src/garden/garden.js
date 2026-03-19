@@ -3,7 +3,7 @@ import React from "react";
 import {useEffect} from "react";
 import './garden.css'
 import {AddPlant} from "../components/add_plant_button";
-import {getDatabase, ref, child, get, remove, update} from "firebase/database";
+import {getDatabase, ref, child, get, remove, update, set} from "firebase/database";
 import {initializeApp} from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import {LoginModal} from "../modals/login_modal";
@@ -76,8 +76,8 @@ export function Garden() {
         plants_clone[name] = {...plants_clone[name], ...data};
         update(child(dbRef, "plants/"+name), data);
 
-        if (data.sensor_pin != -1) {
-            update(child(dbRef, "sensor/data_pos/"+name), 0);
+        if (!(name in plants) && (data.sensor_pin != -1)) {
+            set(child(dbRef, "sensor/data_pos/"+name), 0);
         }
 
         console.log(plants_clone);
