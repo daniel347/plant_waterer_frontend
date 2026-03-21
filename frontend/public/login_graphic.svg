@@ -29,8 +29,8 @@
      inkscape:document-units="mm"
      inkscape:lockguides="true"
      inkscape:zoom="1.6062432"
-     inkscape:cx="409.65154"
-     inkscape:cy="282.9584"
+     inkscape:cx="476.57789"
+     inkscape:cy="229.41731"
      inkscape:window-width="2560"
      inkscape:window-height="1369"
      inkscape:window-x="-8"
@@ -983,7 +983,10 @@
      y="-2.1115723e-06" />
   <g
      id="g1"
-     transform="translate(0.10008589,1.0444507)">
+     transform="translate(0.10008589,1.0444507)"
+     inkscape:export-filename="..\..\graphics\login_graphic.svg"
+     inkscape:export-xdpi="96"
+     inkscape:export-ydpi="96">
     <g
        id="g3-5"
        transform="translate(112.03955,6.0843385)">
