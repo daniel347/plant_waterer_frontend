@@ -32,6 +32,7 @@ void loop() {}
 #include "plant.hpp"
 #include "Database.hpp"
 #include "MoistureSensor.hpp"
+#include "util.h"
 
 // ================== WiFi and Time Settings ==================
 const char* ssid     = "PLUSNET-NZCF7H";
@@ -80,13 +81,14 @@ Plant* plants[MAX_N_PLANTS];
 int n_plants = 0;
 bool valves_engaged = false;
 
-unsigned long last_checked = 0;
-unsigned long last_pinged = 0;
+time_t last_checked = 0;
+time_t last_pinged = 0;
 
 int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
 
 int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
+#define MAX_DATA_POINTS 10
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -110,6 +112,7 @@ void setup() {
 #ifdef FIREBASE
     connectWiFi();
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+
     Serial.println("Starting setup");
     // database.setup();
     Serial.println("setting up ssl client");
@@ -156,141 +159,147 @@ void loop() {
 #ifdef FIREBASE
   // Serial.print("heap size: ");
   // Serial.println(ESP.getFreeHeap());
-  if (database.loop()) {
+    if (database.loop()) {
 #endif
-    if (!initialised) {
-      Serial.print("Starting initialisation");
-      initialised = true;
+        if (!initialised) {
+            Serial.print("Starting initialisation");
+            initialised = true;
 #ifdef FIREBASE
-      Serial.println("Authentication Information");
-      Firebase.printf("User UID: %s\n", database.app.getUid().c_str());
-      Firebase.printf("Auth Token: %s\n", database.app.getToken().c_str());
-      Firebase.printf("Refresh Token: %s\n", database.app.getRefreshToken().c_str());
+            Serial.println("Authentication Information");
+            Firebase.printf("User UID: %s\n", database.app.getUid().c_str());
+            Firebase.printf("Auth Token: %s\n", database.app.getToken().c_str());
+            Firebase.printf("Refresh Token: %s\n", database.app.getRefreshToken().c_str());
 
-      database.initialisePlants(onInitialisePlants);
+            database.initialisePlants(onInitialisePlants);
 #else
-      deserializeJson(plantDB, json_str);
-      constructDB();
+            deserializeJson(plantDB, json_str);
+            constructDB();
 #endif
-    }
+        }
+
 #ifdef FIREBASE
-    if (loaded_data && !set_listeners) {
-        database.getDataPos(onGetDataPos);
-        database.setParamUpdates(n_plants, plants, onPlantUpdate);
-        database.setCommandListener(onCommand);
-        set_listeners = true;
-    }
-    if (update_available_pins) {
-        for (int j =0; j < MAX_N_PLANTS; j++) {
-            bool pin_used = false;
-            bool sensor_pin_used = false;
-            for (int i = 0; i < n_plants; i++) {
-                if (valves[i]->servoPin == available_pins[j]) {
-                    database.setPinUsed(j, -1);
-                    pin_used = true;
+        if (loaded_data && !set_listeners) {
+            database.getDataPos(onGetDataPos);
+            database.setParamUpdates(n_plants, plants, onPlantUpdate);
+            database.setCommandListener(onCommand);
+            set_listeners = true;
+        }
+        if (update_available_pins) {
+                for (int j =0; j < MAX_N_PLANTS; j++) {
+                bool pin_used = false;
+                bool sensor_pin_used = false;
+                for (int i = 0; i < n_plants; i++) {
+                    if (valves[i]->servoPin == available_pins[j]) {
+                        database.setPinUsed(j, -1);
+                        pin_used = true;
+                    }
+                    if (sensors[i] && (sensors[i]->pin == available_sensor_pins[j])) {
+                        database.setSensorPinUsed(j, -1);
+                        sensor_pin_used = true;
+                    }
                 }
-                if (sensors[i] && (sensors[i]->pin == available_sensor_pins[j])) {
-                    database.setSensorPinUsed(j, -1);
-                    sensor_pin_used = true;
+
+                if (!pin_used) {database.setPinUsed(j, available_pins[j]);}
+                if (!sensor_pin_used) {database.setSensorPinUsed(j, available_sensor_pins[j]);}
+            }
+            update_available_pins = false;
+        }
+#endif
+        time_t time_now = getEpochTime();
+
+        if (time_now - last_checked > 60) { // 60000
+            last_checked = time_now;
+            if (!valves_engaged) {
+                for (int i = 0; i < n_plants; i++) {
+                    if (plants[i]->needsWater()) {
+                        engageValves(true);
+                        break;
+                    }
                 }
             }
 
-            if (!pin_used) {database.setPinUsed(j, available_pins[j]);}
-            if (!sensor_pin_used) {database.setSensorPinUsed(j, available_sensor_pins[j]);}
+            for (int i = 0; i < n_plants; i++) {
+                if (plants[i]->needsWater()) {
+                    Serial.printf("Watering %s...\n", plants[i]->getName());
+                    plants[i]->water(pump);
+                    Serial.printf("%s watered.\n", plants[i]->getName());
+#ifdef FIREBASE
+                    database.updateLastWatered(plants[i]->getName(), plants[i]->lastWatered);
+#endif
+                }
+            }
         }
-        update_available_pins = false;
-    }
-#endif
-    if (millis() - last_checked > 60000) { // 60000
-      last_checked = millis();
-      if (!valves_engaged) {
-          for (int i = 0; i < n_plants; i++) {
-              if (plants[i]->needsWater()) {
-                  engageValves(true);
-                  break;
-              }
-          }
-      }
-
-      for (int i = 0; i < n_plants; i++) {
-          if (plants[i]->needsWater()) {
-              Serial.printf("Watering %s...\n", plants[i]->getName());
-              plants[i]->water(pump);
-              Serial.printf("%s watered.\n", plants[i]->getName());
-#ifdef FIREBASE
-              database.updateLastWatered(plants[i]->getName(), plants[i]->lastWatered);
-#endif
-          }
-      }
 
 #ifdef FIREBASE
-      if (last_checked - last_pinged > 3600000) { // 3600000
-        // ping every hour
-        struct tm timeinfo;
-        getLocalTime(&timeinfo);
-        auto last_pinged = mktime(&timeinfo);
-        database.updateOnline(last_pinged);
+        if (time_now - last_pinged > 3660) {
+            Serial.println("pinging");
+            Serial.println(time_now);
+            Serial.println(last_pinged);
+            
+            // ping every hour
+            last_pinged = time_now;
+            database.updateOnline(last_pinged);
 
-        // add moisture data to the plot
-        if (data_pos_set) {
-            for (int i=0; i < n_plants; i++) {
-                if (plants[i]->hasSensor) {
-                    database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, last_pinged, plants[i]->readSensor(),sensor_data_pos[i]);
-                    sensor_data_pos[i] += 1;
+            // add moisture data to the plot
+            if (data_pos_set) {
+                for (int i=0; i < n_plants; i++) {
+                    if (plants[i]->hasSensor) {
+                        database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, last_pinged, plants[i]->readSensor(),sensor_data_pos[i]);
+                        sensor_data_pos[i] = (sensor_data_pos[i] + 1) % MAX_DATA_POINTS;
+                        database.updateDataPos(plants[i]->getName(), sensor_data_pos[i]);
+                        Serial.printf("updated sensor data pos to %i", sensor_data_pos[i]);
                     }
                 }
             }
         }
-        
 #endif
+        if (valves_engaged) {engageValves(false);}
 
-      if (valves_engaged) {engageValves(false);}
-    }
 #ifdef FIREBASE
-    if (purge) {
-        Serial.println("Purging");
-        // clear the pipes for each of the plants
-        engageValves(true);
+        if (purge) {
+            Serial.println("Purging");
+            // clear the pipes for each of the plants
+            engageValves(true);
 
-        for (int i = 0; i < n_plants; i++) {
-            plants[i]->clearPipe(pump, 20);
+            for (int i = 0; i < n_plants; i++) {
+                plants[i]->clearPipe(pump, 20);
+            }
+            purge = false;
+
+            engageValves(false);
+            database.clearCommandFlags();
+
         }
-        purge = false;
+        if (clean) {
+            Serial.println("Cleaning");
+            // pump water through all paths for cleaning
 
-        engageValves(false);
-        database.clearCommandFlags();
+            engageValves(true);
+            for (int i = 0; i < n_plants; i++) {
+                plants[i]->clearPipe(pump, 200);
+            }
+            clean = false;
 
-    }
-    if (clean) {
-        Serial.println("Cleaning");
-        // pump water through all paths for cleaning
-
-        engageValves(true);
-        for (int i = 0; i < n_plants; i++) {
-            plants[i]->clearPipe(pump, 200);
+            engageValves(false);
+            database.clearCommandFlags();
         }
-        clean = false;
-
-        engageValves(false);
-        database.clearCommandFlags();
-    }
-    if (set_plate_dry) {
-        for (int i = 0; i < n_plants; i++) {
-            Serial.println("Setting plate dry");
-            if ((strcmp(plants[i]->getName(), set_plate_dry_plant) == 0) && (plants[i]->hasSensor) && (plants[i]->sensorUnderPlate)) {
-                plants[i]->setPlateDryBaseline();
-            };
+        if (set_plate_dry) {
+            for (int i = 0; i < n_plants; i++) {
+                Serial.println("Setting plate dry");
+                if ((strcmp(plants[i]->getName(), set_plate_dry_plant) == 0) && (plants[i]->hasSensor) && (plants[i]->sensorUnderPlate)) {
+                    plants[i]->setPlateDryBaseline();
+                };
+            }
+            set_plate_dry = false;
+            database.clearCommandFlags();
         }
-        set_plate_dry = false;
-        database.clearCommandFlags();
-    }
 #endif // FIREBASE
 #ifdef FIREBASE
-  }
-  else {
-    // Serial.println("Not ready");
-    delay(25);
-  }
+    }
+    else {
+        // Serial.println("Not ready");
+        delay(25);
+    }
 #endif // FIREBASE
 
 #endif // CYCLE_VALVE

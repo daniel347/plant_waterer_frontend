@@ -1,5 +1,5 @@
 .modal {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     float: left;
@@ -52,7 +52,7 @@
   }
 }
 
-.login_modal_size {
+.maintenance_modal_size {
   width: 25rem;
   height: 25rem;
 
@@ -68,7 +68,8 @@
   padding: 3rem;
 
   @media (max-width: 600px) {
-    width: 22rem;
+    width: 18rem;
+    padding: 2rem;
   }
 }
 
@@ -78,7 +79,8 @@
   padding: 3rem;
 
   @media (max-width: 600px) {
-    width: 22rem;
+    width: 18rem;
+    padding: 2rem;
   }
 }
 
@@ -113,5 +115,9 @@
 }
 
 .full_width{
+  width: 100%;
+}
+
+.login_graphic {
   width: 100%;
 }

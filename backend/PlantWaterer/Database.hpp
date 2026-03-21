@@ -36,6 +36,7 @@ class Database {
 		void updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture); 
 		void updateOnline(unsigned long lastPinged);
 		void getDataPos(void (*onGetDataPos)(AsyncResult& aResult));
+		void updateDataPos(const char* plantName, int newDataPos);
 		void updateSensorData(const char* plantName, bool sensorUnderPlate, time_t t, float moisture, int dataPos);
 		bool loop();
 		FirebaseApp app;

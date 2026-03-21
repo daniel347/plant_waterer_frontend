@@ -5,6 +5,7 @@ import './modal.css';
 import '../index.css'
 import {TextInput} from "../components/text_input";
 import {getAuth, signInWithEmailAndPassword} from "firebase/auth";
+import LoginGraphic from "../assets/LoginGraphic";
 
 
 export function LoginModal({setAuthenticated, setUser}) {
@@ -48,7 +49,7 @@ export function LoginModal({setAuthenticated, setUser}) {
             <div className="modal plant_container login_modal_size">
                 <form method="post" onSubmit={handleSubmit}>
                     <div  style={{margin: "1rem"}}>
-                        <img src="/login_graphic.png" width="150mm" height="150mm"/>
+                        <LoginGraphic/>
                     </div>
                     <h2 className="modal_title">Welcome!</h2>
                     <h4 className={loginFailed ? "modal_subtitle error" : "modal_subtitle"}>{instruction}</h4>

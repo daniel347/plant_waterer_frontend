@@ -17,10 +17,9 @@ export function Graph({db_ref, last_watered_ref, plant_name}) {
     const [data, setData] = React.useState([]);
     const [lastWatered, setLastWatered] = React.useState(null);
     const [showGraph, setShowGraph] = React.useState(false);
+    const [yName, setYName] = React.useState("Soil Moisture");
 
-    const data_type = "moisture";  // temporary fix
-    const y_name = data_type === "moisture" ? "Soil Moisture" : data_type === "tray" ? "Tray Full" : "Unknown";
-    const data_ref = child(db_ref, 'sensor/' + plant_name + '/' + data_type);
+    const data_ref = child(db_ref, 'sensor/' + plant_name);
     // hello its me
 
     useEffect(() => {
@@ -28,15 +27,19 @@ export function Graph({db_ref, last_watered_ref, plant_name}) {
             console.log("Data updated");
             console.log(snapshot.val());
             const new_data = snapshot.val();
-            if (new_data === null) {
+            if ((new_data === null) || !(("tray" in new_data) || ("moisture" in new_data))) {
                 setData([]);
                 return;
             }
+
+            setYName(("tray" in new_data) ? "Tray Wet" : "Soil Moisture");
+            const data_key = ("tray" in new_data) ? "tray" : "moisture";
+
             const curr_time = Date.now() / 1000;
-            const plot_data = new_data.map((datum) => {
+            const plot_data = Object.values(new_data[data_key]).map((datum) => {
                 return {x: (datum.t - curr_time) / 3600, y: datum.v}
             });
-            setShowGraph(plot_data.length > 0)
+            setShowGraph(plot_data.length > 0);
             setData(plot_data);
         });
         onValue(child(db_ref, 'plants/' + plant_name + '/last_watered'), (snapshot) => {
@@ -59,11 +62,11 @@ export function Graph({db_ref, last_watered_ref, plant_name}) {
                     >
                     <CartesianGrid />
                     <XAxis type="number" dataKey="x" name="time past" unit="h" allowDecimals={false} />
-                    <YAxis type="number" dataKey="y" name={y_name} unit="%" />
+                    <YAxis type="number" dataKey="y" name={yName} unit="%" />
                     <ReferenceLine x={lastWatered} stroke={style.getPropertyValue('--secondary-colour')} label="Last Watered" />
                     <ZAxis type="number" range={[100]} />
                     <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter name={y_name} data={data} fill={style.getPropertyValue('--primary-colour')} line shape="circle" />
+                    <Scatter name={yName} data={data} fill={style.getPropertyValue('--primary-colour')} line shape="circle" />
                 </ScatterChart>
             </ResponsiveContainer>}
         </div>

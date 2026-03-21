@@ -66,7 +66,7 @@ void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpda
 }
 
 void Database::setCommandListener(void (*onCommand)(AsyncResult& aResult)) {
-	database.get(commandStreamClient, "/command", onCommand, true, "streamTask");
+	database.get(streamClient, "/command", onCommand, true, "streamTask");
 }
 
 void Database::clearCommandFlags() {
@@ -90,6 +90,12 @@ void Database::updateSensorData(const char* plantName, bool sensorUnderPlate, ti
 
 void Database::getDataPos(void (*onGetDataPos)(AsyncResult& aResult)) {
 	database.get(aClient, "/sensor/data_pos", onGetDataPos, false, "RealtimeDatabase_GetTask");
+}
+
+void Database::updateDataPos(const char* plantName, int newDataPos) {
+	char sensor_pos_path[64];
+	sprintf(sensor_pos_path, "/sensor/data_pos/%s", plantName);
+	database.set<number_t>(aClient, sensor_pos_path, number_t(newDataPos));
 }
 
 bool Database::loop() {
