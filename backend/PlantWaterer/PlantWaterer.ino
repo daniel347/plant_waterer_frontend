@@ -33,18 +33,12 @@ void loop() {}
 #include "Database.hpp"
 #include "MoistureSensor.hpp"
 #include "util.h"
+#include "secrets.hpp"
 
 // ================== WiFi and Time Settings ==================
-const char* ssid     = "PLUSNET-NZCF7H";
-const char* password = "k6EVXfxg9yhLnV";
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 0;       // adjust for your timezone
 const int   daylightOffset_sec = 0;  // adjust for daylight savings
-
-#define Web_API_KEY "AIzaSyBMkmcudKEwkXGguzcNwZCY7md0rGaHf7I"
-#define DATABASE_URL "https://plant-waterer-9be5e-default-rtdb.europe-west1.firebasedatabase.app/"
-#define USER_EMAIL "daniel.siromani@gmail.com"
-#define USER_PASS "greenLemons27"
 
 // ================== Firebase ==================
 #ifdef FIREBASE
@@ -88,7 +82,7 @@ int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
 
 int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
-#define MAX_DATA_POINTS 10
+#define MAX_DATA_POINTS 100
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -307,8 +301,8 @@ void loop() {
 
 // ================== Helper Functions ==================
 void connectWiFi() {
-    Serial.printf("Connecting to %s", ssid);
-    WiFi.begin(ssid, password);
+    Serial.printf("Connecting to %s", SSID);
+    WiFi.begin(SSID, PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");

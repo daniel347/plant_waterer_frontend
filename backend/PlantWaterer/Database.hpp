@@ -3,17 +3,13 @@
 #ifndef DATABASE_
 #define DATABASE_
 
-#define Web_API_KEY "AIzaSyBMkmcudKEwkXGguzcNwZCY7md0rGaHf7I"
-#define DATABASE_URL "https://plant-waterer-9be5e-default-rtdb.europe-west1.firebasedatabase.app/"
-#define USER_EMAIL "daniel.siromani@gmail.com"
-#define USER_PASS "greenLemons27"
-
 #define ENABLE_USER_AUTH
 #define ENABLE_DATABASE
 #include <FirebaseClient.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include "Plant.hpp"
+#include "secrets.hpp"
 
 using AsyncClient = AsyncClientClass;
 
