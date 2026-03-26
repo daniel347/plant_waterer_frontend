@@ -66,7 +66,7 @@ void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpda
 }
 
 void Database::setCommandListener(void (*onCommand)(AsyncResult& aResult)) {
-	database.get(streamClient, "/command", onCommand, true, "streamTask");
+	database.get(commandStreamClient, "/command", onCommand, true, "streamTask");
 }
 
 void Database::clearCommandFlags() {
