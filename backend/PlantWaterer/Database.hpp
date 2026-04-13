@@ -23,7 +23,7 @@ class Database {
 		Database();
 		void setup();
 		void initialisePlants(void(*onDataReceived)(AsyncResult& aResult));
-		void setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpdate)(AsyncResult& aResult));
+		void setParamUpdates(void (*onPlantUpdate)(AsyncResult& aResult));
 		void setCommandListener(void (*onCommand)(AsyncResult& aResult));
 		void clearCommandFlags();
 		void setPinUsed(int pinInd, int newPin);

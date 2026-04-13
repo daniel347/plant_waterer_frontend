@@ -64,11 +64,9 @@ bool Plant::needsWater() {
     }
     time_t now = getEpochTime();
     if ((now - lastWatered) >= (settings.maxIntervalMillis / 1000)) {
-        Serial.println("Watering as beyond max interval");
         return true;
     }
     else if ((now - lastWatered) <= (settings.minIntervalMillis / 1000)) {
-        Serial.println("Not watering as before min interval");
         return false;
     }
     

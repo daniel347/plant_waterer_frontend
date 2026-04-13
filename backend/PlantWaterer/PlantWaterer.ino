@@ -17,6 +17,7 @@ void loop() {}
 #include <ArduinoJson.h>
 #include "time.h"
 #include <stdio.h>
+#include <stdlib.h> 
 #include <ctime>
 #include <map>
 
@@ -82,7 +83,7 @@ int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
 
 int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
-#define MAX_DATA_POINTS 100
+#define MAX_DATA_POINTS 10
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -174,8 +175,8 @@ void loop() {
 #ifdef FIREBASE
         if (loaded_data && !set_listeners) {
             database.getDataPos(onGetDataPos);
-            database.setParamUpdates(n_plants, plants, onPlantUpdate);
-            database.setCommandListener(onCommand);
+            database.setParamUpdates(onUpdate);
+            // database.setCommandListener(onCommand);
             set_listeners = true;
         }
         if (update_available_pins) {
@@ -201,7 +202,7 @@ void loop() {
 #endif
         time_t time_now = getEpochTime();
 
-        if (time_now - last_checked > 60) { // 60000
+        if (time_now - last_checked > 30) {
             last_checked = time_now;
             if (!valves_engaged) {
                 for (int i = 0; i < n_plants; i++) {
@@ -225,7 +226,7 @@ void loop() {
         }
 
 #ifdef FIREBASE
-        if (time_now - last_pinged > 3660) {
+        if (time_now - last_pinged > 66) {
             Serial.println("pinging");
             Serial.println(time_now);
             Serial.println(last_pinged);
@@ -238,7 +239,7 @@ void loop() {
             if (data_pos_set) {
                 for (int i=0; i < n_plants; i++) {
                     if (plants[i]->hasSensor) {
-                        database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, last_pinged, plants[i]->readSensor(),sensor_data_pos[i]);
+                        database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, time_now, plants[i]->readSensor(),sensor_data_pos[i]);
                         sensor_data_pos[i] = (sensor_data_pos[i] + 1) % MAX_DATA_POINTS;
                         database.updateDataPos(plants[i]->getName(), sensor_data_pos[i]);
                         Serial.printf("updated sensor data pos to %i", sensor_data_pos[i]);
@@ -368,7 +369,54 @@ void createNewPlant(const char* plant_name, JsonObject plant_data) {
     n_plants++;
 }
 
-void updatePlant(const char* new_data, const char* path) {
+void get_parent_path(char** path, char* parent) {
+    strip_leading_slash(path);
+    char *tmp = strchr(*path, '/');
+    if (tmp) {
+        int parent_len = tmp - *path;
+        memcpy(parent, *path, parent_len);
+        parent[parent_len] = '\0';
+        *path = tmp+1;
+    }
+    else {
+        strcpy(parent, *path); 
+        *path += strlen(*path);
+    }
+}
+
+void strip_leading_slash(char** path) {
+    char *tmp = strchr(*path, '/');
+    if (tmp && (tmp - *path) == 0) {
+        *path = tmp+1;
+    }
+}
+
+void update(const char* new_data, const char* path_const) {
+    char* path;
+    strcpy(path, path_const);
+
+    Serial.println("Update");
+    Serial.println(path);
+    Serial.println(strlen(path));
+    Serial.println(new_data);
+
+    if (strlen(path) == 1) {
+        Serial.println("Root update");
+    }
+    else {
+        char parent[32];
+        get_parent_path(&path, parent);
+        Serial.println(parent);
+        if (strcmp(parent, "plants") == 0) {
+            updatePlant(new_data, path);
+        }
+        else if (strcmp(parent, "command") == 0) {
+            executeCommand(new_data, path);
+        }
+    }
+}
+
+void updatePlant(const char* new_data, char* path) {
     Serial.println("Updating plant");
     Serial.println(path);
     Serial.println(strlen(path));
@@ -376,49 +424,61 @@ void updatePlant(const char* new_data, const char* path) {
         Serial.println("Root update");
     }
     else {
-        char *tmp = strrchr(path, '/');
-        if (tmp) {
-            path = tmp+1;
-        }
+        char plant_name[32];
+        get_parent_path(&path, plant_name);
+
+        Serial.println(plant_name);
         Serial.println(path);
+
+        strip_leading_slash(&path);
+
+        int plant_ind = -1;
+
+        for (int i = 0; i < n_plants; i++) {
+            if (strcmp(plants[i]->getName(), plant_name) == 0) {
+                plant_ind = i;
+            }
+        }
+        
         if (strcmp(path, "last_watered") == 0) { // nothing to do - shouldnt we update the plant last watered?
             Serial.println("last watered update");
-            return;
+            plants[plant_ind]->lastWatered = atoi(new_data);
         }
-        else {
-            for (int i = 0; i < n_plants; i++) {
-                if (strcmp(plants[i]->getName(), path) == 0) {
-                    JsonDocument new_data_json;
-                    auto err = deserializeJson(new_data_json, new_data);
-                    if (err == DeserializationError::Ok) {
-                        serializeJson(new_data_json, Serial);
+        else if (strlen(path) <= 1) {
+            if (plant_ind != -1) {
+                // Root update on the plant
+                Serial.println(new_data);
+                JsonDocument new_data_json;
+                auto err = deserializeJson(new_data_json, new_data);
+                if (err == DeserializationError::Ok) {
+                    serializeJson(new_data_json, Serial);
 
-                        auto settings_json = new_data_json["settings"];
-                        if (settings_json) {
-                            plants[i]->updateSettings(constructSettingsFromJson(settings_json));
-                        }
-
-                        // update disabled
-                        if (new_data_json["disabled"].is<bool>()) {
-                            plants[i]->disabled = new_data_json["disabled"];
-                        }
-
-                    } else {
-                        Serial.println("Could not deserialise data");
+                    auto settings_json = new_data_json["settings"];
+                    if (settings_json) {
+                        plants[plant_ind]->updateSettings(constructSettingsFromJson(settings_json));
                     }
-                    return;
+
+                    // update disabled
+                    if (new_data_json["disabled"].is<bool>()) {
+                        plants[plant_ind]->disabled = new_data_json["disabled"];
+                    }
+
+                } else {
+                    Serial.println("Could not deserialise data");
                 }
             }
-            Serial.println("Creating new plant");
-            // Not any of the current plants so we have to create a new one
-            JsonDocument new_data_json;
-            auto err = deserializeJson(new_data_json, new_data);
-            if (err == DeserializationError::Ok) {
-                serializeJson(new_data_json, Serial);
-                createNewPlant(path, new_data_json.as<JsonObject>());
-                update_available_pins = true;
-            } else {
-                Serial.println("Could not deserialise data");
+            else {
+                Serial.println("Creating new plant");
+                // Not any of the current plants so we have to create a new one
+                JsonDocument new_data_json;
+                auto err = deserializeJson(new_data_json, new_data);
+                if (err == DeserializationError::Ok) {
+                    serializeJson(new_data_json, Serial);
+                    createNewPlant(path, new_data_json.as<JsonObject>());
+                    update_available_pins = true;
+                } else {
+                    Serial.println("Could not deserialise data");
+                }
             }
         }
     }
@@ -438,7 +498,7 @@ void setDataPos(const char* data) {
     data_pos_set = true;
 }
 
-void executeCommand(const char* data, const char* path) {
+void executeCommand(const char* data, char* path) {
     char *tmp = strrchr(path, '/');
     if (tmp) {
         path = tmp+1;
@@ -464,17 +524,21 @@ void onInitialisePlants(AsyncResult& aResult) {
     processDataBase(aResult, constructDB);
 }
 
-void onPlantUpdate(AsyncResult& aResult) {
-    processDataStream(aResult, updatePlant);
+//void onPlantUpdate(AsyncResult& aResult) {
+//    processDataStream(aResult, updatePlant);
+//}
+
+void onUpdate(AsyncResult& aResult) {
+    processDataStream(aResult, update);
 }
 
 void onGetDataPos(AsyncResult& aResult) {
     processDataBase(aResult, setDataPos);
 }
 
-void onCommand(AsyncResult& aResult) {
-    processDataStream(aResult, executeCommand);
-}
+//void onCommand(AsyncResult& aResult) {
+//    processDataStream(aResult, executeCommand);
+//}
 
 
 #endif //FIREBASE

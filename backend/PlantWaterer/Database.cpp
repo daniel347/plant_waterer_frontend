@@ -61,12 +61,12 @@ void Database::updateOnline(unsigned long lastPinged) {
 	database.set<number_t>(aClient, "system/online", number_t(lastPinged));
 }
 
-void Database::setParamUpdates(int n_plants, Plant* plants[], void (*onPlantUpdate)(AsyncResult& aResult)) {
-	database.get(streamClient, "/plants", onPlantUpdate, true, "streamTask");
+void Database::setParamUpdates(void (*onUpdate)(AsyncResult& aResult)) {
+	database.get(streamClient, "/", onUpdate, true, "streamTask");
 }
 
 void Database::setCommandListener(void (*onCommand)(AsyncResult& aResult)) {
-	database.get(commandStreamClient, "/command", onCommand, true, "streamTask");
+	// database.get(commandStreamClient, "/command", onCommand, true, "streamTask");
 }
 
 void Database::clearCommandFlags() {
@@ -160,20 +160,26 @@ void processDataStream(AsyncResult& aResult, void (*process_fn)(const char*, con
 		Firebase.printf("Error task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.error().message().c_str(), aResult.error().code());
 
 	if (aResult.available()) {
-		Firebase.printf("task: %s, payload: %s\n", aResult.uid().c_str(), aResult.c_str());
+		// Firebase.printf("task: %s, payload: %s\n", aResult.uid().c_str(), aResult.c_str());
 		RealtimeDatabaseResult &stream = aResult.to<RealtimeDatabaseResult>();
 		if (stream.isStream())
 			{
+				String eventType = stream.event().c_str();
+				String dataPath  = stream.dataPath().c_str();
+				String data      = stream.to<const char*>();
+
 				Serial.println("----------------------------");
 				Firebase.printf("task: %s\n", aResult.uid().c_str());
-				Firebase.printf("event: %s\n", stream.event().c_str());
-				Firebase.printf("path: %s\n", stream.dataPath().c_str());
-				Firebase.printf("data: %s\n", stream.to<const char *>());
+				Firebase.printf("event: %s\n", eventType.c_str());
+				Firebase.printf("path: %s\n", dataPath.c_str());
+				Firebase.printf("data: %s\n", data.c_str());
 				Firebase.printf("type: %d\n", stream.type());
-
-				const char * data = stream.to<const char *>();
-				if (strcmp(data, "null") != 0) {
-					process_fn(data, stream.dataPath().c_str());
+				if (strcmp(eventType.c_str(), "patch") != 0) {
+					Serial.println("Ignoring non patch");
+					return;
+				}
+				if (strcmp(data.c_str(), "null") != 0) {
+					process_fn(data.c_str(), stream.dataPath().c_str());
 				}
 				else {
 					Serial.println("No data");
@@ -181,8 +187,7 @@ void processDataStream(AsyncResult& aResult, void (*process_fn)(const char*, con
 			}
 		else
 			{
-				Serial.println("----------------------------");
-				Firebase.printf("task: %s, payload: %s\n", aResult.uid().c_str(), aResult.c_str());
+				Serial.println("Recieved non stream - this shouldn't happen");
 			}
 	}
 }
