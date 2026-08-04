@@ -164,22 +164,21 @@ void processDataStream(AsyncResult& aResult, void (*process_fn)(const char*, con
 		RealtimeDatabaseResult &stream = aResult.to<RealtimeDatabaseResult>();
 		if (stream.isStream())
 			{
-				String eventType = stream.event().c_str();
-				String dataPath  = stream.dataPath().c_str();
-				String data      = stream.to<const char*>();
-
-				Serial.println("----------------------------");
-				Firebase.printf("task: %s\n", aResult.uid().c_str());
-				Firebase.printf("event: %s\n", eventType.c_str());
-				Firebase.printf("path: %s\n", dataPath.c_str());
-				Firebase.printf("data: %s\n", data.c_str());
-				Firebase.printf("type: %d\n", stream.type());
-				if (strcmp(eventType.c_str(), "patch") != 0) {
-					Serial.println("Ignoring non patch");
+				if (strcmp(stream.event().c_str(), "keep-alive") == 0) {
+					//Serial.println("Ignoring keep-alive");
 					return;
 				}
-				if (strcmp(data.c_str(), "null") != 0) {
-					process_fn(data.c_str(), stream.dataPath().c_str());
+
+				Serial.println("----------------------------");
+				//Firebase.printf("task: %s\n", aResult.uid().c_str());
+				//Firebase.printf("event: %s\n", stream.event().c_str());
+				//Firebase.printf("path: %s\n", stream.dataPath().c_str());
+				//Firebase.printf("data: %s\n", stream.to<const char *>());
+				//Firebase.printf("type: %d\n", stream.type());
+
+				const char * data = stream.to<const char *>();
+				if (strcmp(data, "null") != 0) {
+					process_fn(data, stream.dataPath().c_str());
 				}
 				else {
 					Serial.println("No data");

@@ -83,7 +83,11 @@ int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
 
 int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
+<<<<<<< HEAD
 #define MAX_DATA_POINTS 10
+=======
+#define MAX_DATA_POINTS 25
+>>>>>>> 73c1da3 (Plant waterer updates and tests)
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -202,7 +206,8 @@ void loop() {
 #endif
         time_t time_now = getEpochTime();
 
-        if (time_now - last_checked > 30) {
+        if (time_now - last_checked > 60) {
+            Serial.printf("Checking at time: %i\n", time_now);
             last_checked = time_now;
             if (!valves_engaged) {
                 for (int i = 0; i < n_plants; i++) {
@@ -219,6 +224,7 @@ void loop() {
                     plants[i]->water(pump);
                     Serial.printf("%s watered.\n", plants[i]->getName());
 #ifdef FIREBASE
+                    Serial.printf("Updating last watered to %i.\n", plants[i]->lastWatered);
                     database.updateLastWatered(plants[i]->getName(), plants[i]->lastWatered);
 #endif
                 }
@@ -226,10 +232,8 @@ void loop() {
         }
 
 #ifdef FIREBASE
-        if (time_now - last_pinged > 66) {
-            Serial.println("pinging");
-            Serial.println(time_now);
-            Serial.println(last_pinged);
+        if (time_now - last_pinged > 3600) {
+            Serial.printf("pinging at time: %d\n", time_now);
             
             // ping every hour
             last_pinged = time_now;
@@ -242,7 +246,6 @@ void loop() {
                         database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, time_now, plants[i]->readSensor(),sensor_data_pos[i]);
                         sensor_data_pos[i] = (sensor_data_pos[i] + 1) % MAX_DATA_POINTS;
                         database.updateDataPos(plants[i]->getName(), sensor_data_pos[i]);
-                        Serial.printf("updated sensor data pos to %i", sensor_data_pos[i]);
                     }
                 }
             }
@@ -420,6 +423,7 @@ void updatePlant(const char* new_data, char* path) {
     Serial.println("Updating plant");
     Serial.println(path);
     Serial.println(strlen(path));
+
     if (strlen(path) == 1) {
         Serial.println("Root update");
     }

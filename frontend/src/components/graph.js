@@ -39,8 +39,9 @@ export function Graph({db_ref, last_watered_ref, plant_name}) {
             const plot_data = Object.values(new_data[data_key]).map((datum) => {
                 return {x: (datum.t - curr_time) / 3600, y: datum.v}
             });
-            setShowGraph(plot_data.length > 0);
-            setData(plot_data);
+            const plot_data_sorted = Array.prototype.toSorted.call(plot_data, (a, b) => a.x - b.x);
+            setShowGraph(plot_data_sorted.length > 0);
+            setData(plot_data_sorted);
         });
         onValue(child(db_ref, 'plants/' + plant_name + '/last_watered'), (snapshot) => {
             console.log("Last watered updated");
