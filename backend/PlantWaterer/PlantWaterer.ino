@@ -83,11 +83,7 @@ int available_pins[] = {12, 14, 27, 26};
 int available_sensor_pins[] = {35, 34, 39, 36};
 
 int sensor_data_pos[] = {0, 0, 0, 0};  // the seek position in the circular buffer
-<<<<<<< HEAD
-#define MAX_DATA_POINTS 10
-=======
 #define MAX_DATA_POINTS 25
->>>>>>> 73c1da3 (Plant waterer updates and tests)
 
 #ifdef CYCLE_VALVE
 ServoValve v(14, VALVE_EN_PIN);
@@ -232,23 +228,30 @@ void loop() {
         }
 
 #ifdef FIREBASE
-        if (time_now - last_pinged > 3600) {
+        if (time_now - last_pinged > 60) {
             Serial.printf("pinging at time: %d\n", time_now);
             
             // ping every hour
             last_pinged = time_now;
-            database.updateOnline(last_pinged);
+            Serial.printf("updating online\n");
+            //database.updateOnline(last_pinged);
+            Serial.printf("updating online\n");
 
             // add moisture data to the plot
             if (data_pos_set) {
                 for (int i=0; i < n_plants; i++) {
                     if (plants[i]->hasSensor) {
+                        Serial.printf("updating online\n");
                         database.updateSensorData(plants[i]->getName(), plants[i]->sensorUnderPlate, time_now, plants[i]->readSensor(),sensor_data_pos[i]);
+                        Serial.printf("updating online\n");
                         sensor_data_pos[i] = (sensor_data_pos[i] + 1) % MAX_DATA_POINTS;
+                        Serial.printf("updating online\n");
                         database.updateDataPos(plants[i]->getName(), sensor_data_pos[i]);
+                        Serial.printf("updating online\n");
                     }
                 }
             }
+            Serial.printf("updating online\n");
         }
 #endif
         if (valves_engaged) {engageValves(false);}
@@ -557,9 +560,12 @@ void cycleValve(ServoValve *v) {
 }
 
 void engageValves(bool engage) {
+    Serial.printf("updating online\n");
     for (int j = 0; j < n_plants; j++) {
+        Serial.printf("updating online\n");
         if (engage) {valves[j]->close();}
         else {valves[j]->open();}
+        Serial.printf("updating online\n");
     }
     valves_engaged = engage;
 }
